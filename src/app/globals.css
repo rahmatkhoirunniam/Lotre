@@ -1,0 +1,554 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Outfit', sans-serif;
+  --bg-primary: #080b11;
+  --bg-surface: rgba(13, 20, 35, 0.5);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(139, 92, 246, 0.2);
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --primary: #8b5cf6; /* Royal Violet */
+  --primary-glow: rgba(139, 92, 246, 0.4);
+  --success: #10b981; /* Emerald Green */
+  --success-glow: rgba(16, 185, 129, 0.3);
+  --warning: #f59e0b; /* Amber */
+  --error: #ef4444; /* Crimson Red */
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+/* Global input / select baseline for mobile-friendliness */
+input, select, textarea {
+  font-family: var(--font-sans);
+  font-size: 16px; /* Prevents iOS zoom-on-focus */
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100dvh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Base Layout and Background Ambient Glows */
+body {
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -10%;
+  left: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+  animation: glowShift1 25s infinite alternate ease-in-out;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -10%;
+  right: -10%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 75%);
+  z-index: -1;
+  pointer-events: none;
+  animation: glowShift2 30s infinite alternate ease-in-out;
+}
+
+/* Animations */
+@keyframes glowShift1 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(15%, 10%) scale(1.2); }
+}
+
+@keyframes glowShift2 {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-10%, -15%) scale(1.1); }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(8, 11, 17, 0.8);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Glassmorphism Card Utility */
+.glass-card {
+  background: var(--bg-surface);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px 0 rgba(139, 92, 246, 0.08);
+}
+
+/* Micro-animations and Interactions */
+.btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+  touch-action: manipulation; /* Mobile responsiveness */
+  min-height: 48px; /* Touch target */
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(139, 92, 246, 0.6);
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px var(--success-glow);
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.badge-primary {
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: #a78bfa;
+}
+
+.badge-secondary {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #94a3b8;
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+/* Custom Table Design */
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.custom-table th {
+  padding: 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.custom-table td {
+  padding: 16px;
+  font-size: 0.95rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.custom-table tr {
+  transition: all 0.2s;
+}
+
+.custom-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Confetti Particle Animations */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #ffd700;
+  top: -20px;
+  border-radius: 2px;
+  animation: confettiFall 3s infinite linear;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(400px) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation (used by pending badges) */
+@keyframes pulse {
+  0% { opacity: 1; }
+  100% { opacity: 0.65; }
+}
+
+/* Responsive Split screen layout on desktop viewports */
+@media (min-width: 900px) {
+  .responsive-split {
+    grid-template-columns: 4.5fr 7.5fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   MOBILE-FIRST RESPONSIVE OVERRIDES (≤ 640px)
+   ══════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* ── Global layout ── */
+  body {
+    font-size: 15px;
+  }
+
+  /* ── Dashboard outer container ── */
+  .dashboard-container {
+    padding: 12px !important;
+  }
+
+  /* ── Glass cards: reduce padding on mobile ── */
+  .glass-card {
+    padding: 16px !important;
+    border-radius: 14px !important;
+  }
+
+  /* ── Buttons: ensure full touch target height ── */
+  .btn {
+    min-height: 44px !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* ══ RESPONSIVE TABLE → CARD STACKING ══
+     Tables with class .custom-table inside a .table-responsive wrapper
+     are converted to stacked cards on mobile.                          */
+  .table-responsive {
+    overflow-x: visible !important;
+  }
+
+  .table-responsive .custom-table,
+  .table-responsive .custom-table thead,
+  .table-responsive .custom-table tbody,
+  .table-responsive .custom-table th,
+  .table-responsive .custom-table td,
+  .table-responsive .custom-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  /* Hide table headers (shown via data-label on each cell) */
+  .table-responsive .custom-table thead {
+    display: none;
+  }
+
+  /* Each row becomes a card */
+  .table-responsive .custom-table tbody tr {
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    padding: 12px 0;
+    transition: background 0.2s;
+  }
+
+  .table-responsive .custom-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  /* Each cell: show label + value in a row */
+  .table-responsive .custom-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 0.88rem;
+    gap: 8px;
+    text-align: right;
+    min-height: 40px;
+  }
+
+  .table-responsive .custom-table td:last-child {
+    border-bottom: none;
+  }
+
+  /* data-label attribute provides the column name prefix */
+  .table-responsive .custom-table td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    text-align: left;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Action cells: stack full-width buttons */
+  .table-responsive .custom-table td.td-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 12px;
+  }
+
+  .table-responsive .custom-table td.td-actions::before {
+    display: none;
+  }
+
+  .table-responsive .custom-table td.td-actions .btn,
+  .table-responsive .custom-table td.td-actions button {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* ── Superadmin action button group: stack vertically ── */
+  .admin-actions-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+
+  .admin-actions-group button {
+    width: 100% !important;
+  }
+
+  /* ── Header: stack brand + controls vertically ── */
+  .dashboard-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 16px !important;
+    padding: 16px !important;
+  }
+
+  .dashboard-header-controls {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .workspace-switcher-row {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .workspace-switcher-row select {
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+
+  .workspace-switcher-row .btn {
+    width: 100% !important;
+  }
+
+  .user-info-row {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  /* ── Member add form: stack inputs ── */
+  .member-add-form {
+    flex-direction: column !important;
+  }
+
+  .member-add-form input,
+  .member-add-form button {
+    width: 100% !important;
+    min-width: unset !important;
+    flex: unset !important;
+  }
+
+  /* ── Workspace indicator: wrap text ── */
+  .workspace-indicator {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .workspace-indicator h2 {
+    font-size: 1.2rem !important;
+  }
+
+  .workspace-indicator code {
+    word-break: break-all;
+    font-size: 0.75rem;
+  }
+
+  /* ── Modal: full-screen friendly ── */
+  .modal-overlay {
+    padding: 12px !important;
+    align-items: flex-end !important; /* Bottom sheet on mobile */
+  }
+
+  .modal-content {
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92dvh !important;
+    overflow-y: auto !important;
+    padding: 24px 20px !important;
+  }
+
+  /* ── Migration tabs: scroll horizontally ── */
+  .migration-tabs {
+    overflow-x: auto !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+  }
+
+  /* ── Stats grid: 2 columns on mobile ── */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+
+  .stats-grid .glass-card {
+    padding: 14px !important;
+  }
+
+  .stats-grid .glass-card > div > span:first-child {
+    font-size: 1.6rem !important;
+  }
+
+  /* ── Landing page hero ── */
+  .landing-ctas {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .landing-ctas a,
+  .landing-ctas button {
+    text-align: center !important;
+    justify-content: center !important;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   TABLET RESPONSIVE (641px – 900px)
+   ══════════════════════════════════════════════ */
+@media (min-width: 641px) and (max-width: 900px) {
+  .dashboard-header {
+    flex-wrap: wrap !important;
+    gap: 14px !important;
+  }
+
+  .dashboard-header-controls {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  .workspace-switcher-row {
+    flex-wrap: wrap !important;
+  }
+
+  .workspace-switcher-row select {
+    min-width: 180px !important;
+  }
+
+  /* Superadmin 7-column table → horizontal scroll on tablet */
+  .table-responsive-tablet {
+    overflow-x: auto !important;
+  }
+}
+

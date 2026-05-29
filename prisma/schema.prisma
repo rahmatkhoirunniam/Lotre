@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// MODELS (Enums are simulated as strings for SQLite)
+// ==========================================
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  namaLengkap  String
+  role         String    @default("TENANT_ADMIN") // "SUPERADMIN" | "TENANT_ADMIN" | "MEMBER"
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Relations
+  tenantsOwned Tenant[]  @relation("TenantOwner")
+  memberProfile Anggota? @relation("UserMember")
+}
+
+model Tenant {
+  id            String       @id @default(uuid())
+  namaGrup      String
+  slug          String       @unique
+  plan          String       @default("free") // "free" | "premium"
+  nominalIuran  Float        @default(200000)
+  status        String       @default("ACTIVE") // "ACTIVE" | "SUSPENDED" | "PENDING"
+  suspendReason String?
+  
+  ownerId       String
+  owner         User         @relation("TenantOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  members       Anggota[]
+  payments      Setoran[]
+  winners       Pemenang[]
+  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Anggota {
+  id        String       @id @default(uuid())
+  tenantId  String
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  nama      String
+  whatsapp  String
+  status    String       @default("ACTIVE") // "ACTIVE" | "INACTIVE"
+  
+  // Optional link to User login account
+  userId    String?      @unique
+  user      User?        @relation("UserMember", fields: [userId], references: [id], onDelete: SetNull)
+  
+  payments  Setoran[]
+  winners   Pemenang[]
+  
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  // Performance Indexes for Multi-Tenant Partitioning queries
+  @@index([tenantId, id])
+  @@index([tenantId, status])
+}
+
+model Setoran {
+  id           String        @id @default(uuid())
+  tenantId     String
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  anggotaId    String
+  anggota      Anggota       @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  
+  periodeKe    Int
+  nominal      Float
+  status       String        @default("BELUM_BAYAR") // "LUNAS" | "BELUM_BAYAR"
+  tanggalBayar DateTime?
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Performance Indexes for fast payments audits
+  @@index([tenantId, anggotaId])
+  @@index([tenantId, periodeKe])
+}
+
+model Pemenang {
+  id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  
+  anggotaId     String
+  anggota       Anggota  @relation(fields: [anggotaId], references: [id], onDelete: Cascade)
+  
+  periodeKe     Int
+  tanggalMenang DateTime @default(now())
+  totalDiterima Float
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Performance Indexes for fast winner auditing
+  @@index([tenantId, anggotaId])
+  @@index([tenantId, periodeKe])
+}
