@@ -25,6 +25,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const savedTheme = localStorage.getItem('lotre_theme');
+                if (savedTheme === 'light') {
+                  document.documentElement.classList.add('light-mode');
+                } else {
+                  document.documentElement.classList.remove('light-mode');
+                }
+              } catch (_) {}
+            `
+          }}
+        />
+      </head>
       <body>
         <Providers>
           {children}

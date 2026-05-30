@@ -3,7 +3,7 @@
 :root {
   --font-sans: 'Outfit', sans-serif;
   --bg-primary: #080b11;
-  --bg-surface: rgba(13, 20, 35, 0.5);
+  --bg-surface: rgba(13, 20, 35, 0.45);
   --border-glass: rgba(255, 255, 255, 0.08);
   --border-glow: rgba(139, 92, 246, 0.2);
   --text-primary: #ffffff;
@@ -14,6 +14,33 @@
   --success-glow: rgba(16, 185, 129, 0.3);
   --warning: #f59e0b; /* Amber */
   --error: #ef4444; /* Crimson Red */
+  
+  /* Ambient Background Glow Variables */
+  --bg-ambient-1: rgba(139, 92, 246, 0.15);
+  --bg-ambient-2: rgba(16, 185, 129, 0.1);
+  --option-bg: #0d1423;
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.light-mode {
+  --bg-primary: #f8fafc; /* Slate 50 */
+  --bg-surface: rgba(255, 255, 255, 0.75);
+  --border-glass: rgba(15, 23, 42, 0.08);
+  --border-glow: rgba(139, 92, 246, 0.12);
+  --text-primary: #0f172a; /* Slate 900 */
+  --text-secondary: #475569; /* Slate 600 */
+  --primary: #7c3aed; /* Deep Violet */
+  --primary-glow: rgba(124, 58, 237, 0.25);
+  --success: #059669; /* Darker Emerald */
+  --success-glow: rgba(5, 150, 105, 0.15);
+  --warning: #d97706;
+  --error: #dc2626;
+  
+  /* Ambient Background Glow Variables */
+  --bg-ambient-1: rgba(124, 58, 237, 0.06);
+  --bg-ambient-2: rgba(5, 150, 105, 0.05);
+  --option-bg: #ffffff;
+  --card-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.06);
 }
 
 * {
@@ -38,6 +65,7 @@ html, body {
   font-family: var(--font-sans);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Base Layout and Background Ambient Glows */
@@ -52,7 +80,7 @@ body::before {
   left: -10%;
   width: 50%;
   height: 50%;
-  background: radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, var(--bg-ambient-1) 0%, transparent 70%);
   z-index: -1;
   pointer-events: none;
   animation: glowShift1 25s infinite alternate ease-in-out;
@@ -65,7 +93,7 @@ body::after {
   right: -10%;
   width: 60%;
   height: 60%;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 75%);
+  background: radial-gradient(circle, var(--bg-ambient-2) 0%, transparent 75%);
   z-index: -1;
   pointer-events: none;
   animation: glowShift2 30s infinite alternate ease-in-out;
@@ -523,6 +551,409 @@ body::after {
     justify-content: center !important;
   }
 }
+
+/* ── Custom Styled Form Controls ── */
+.custom-select {
+  font-family: var(--font-sans);
+  padding: 8px 36px 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-glass);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 42px;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+}
+
+.light-mode .custom-select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.custom-select:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.light-mode .custom-select:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.custom-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.custom-select option {
+  background-color: var(--option-bg);
+  color: var(--text-primary);
+}
+
+.form-input {
+  font-family: var(--font-sans);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-glass);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 42px;
+}
+
+.light-mode .form-input {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.form-input:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.light-mode .form-input:hover {
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.light-mode .form-input:focus {
+  background: #ffffff;
+}
+
+/* ── Theme Toggle Button ── */
+.theme-toggle {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--card-shadow);
+}
+
+.theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.light-mode .theme-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ══════════════════════════════════════════════
+   HIGH CONTRAST LIGHT MODE OVERRIDES
+   ══════════════════════════════════════════════ */
+
+/* 1. Force hardcoded white text inline styles to become dark in Light Mode, excluding primary/success buttons & badges */
+.light-mode [style*="color: #fff"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="color: #ffffff"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="color: white"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="color:rgb(255, 255, 255)"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="color: rgb(255, 255, 255)"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="color:#fff"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="color:#ffffff"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="rgb(255, 255, 255)"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="rgb(255,255,255)"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option),
+.light-mode [style*="white"]:not(.btn-primary):not(.btn-success):not(.badge):not(.badge *):not(.btn-primary *):not(.btn-success *):not(option) {
+  color: var(--text-primary) !important;
+}
+
+/* 2. Guarantee headers, strong texts, and dashboard labels are obsidian dark in Light Mode */
+.light-mode h1, 
+.light-mode h2, 
+.light-mode h3, 
+.light-mode h4, 
+.light-mode h5, 
+.light-mode h6,
+.light-mode strong,
+.light-mode b,
+.light-mode .workspace-switcher-row span,
+.light-mode .user-info-row div {
+  color: var(--text-primary) !important;
+}
+
+.light-mode p,
+.light-mode span:not(.badge):not(.btn *):not(.badge *) {
+  color: var(--text-secondary) !important;
+}
+
+/* 3. High contrast for inputs, select elements, and textareas in Light Mode */
+.light-mode input:not([type="submit"]):not([type="button"]):not(.btn),
+.light-mode select:not(.btn),
+.light-mode textarea {
+  background-color: #ffffff !important;
+  color: var(--text-primary) !important;
+  border: 1px solid rgba(15, 23, 42, 0.16) !important;
+}
+
+.light-mode input::placeholder,
+.light-mode textarea::placeholder {
+  color: #64748b !important;
+  opacity: 0.8 !important;
+}
+
+/* 4. Elegant Glass Cards in Light Mode */
+.light-mode .glass-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04) !important;
+}
+
+.light-mode .glass-card:hover {
+  border-color: rgba(124, 58, 237, 0.2) !important;
+  box-shadow: 0 12px 35px rgba(124, 58, 237, 0.08) !important;
+}
+
+/* 5. Custom Table styling in Light Mode */
+.light-mode .custom-table th {
+  color: var(--text-secondary) !important;
+  border-bottom: 2px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+.light-mode .custom-table td {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04) !important;
+}
+
+.light-mode .custom-table tr:hover td {
+  background: rgba(124, 58, 237, 0.02) !important;
+}
+
+/* 6. Secondary Buttons and sign-out controls in Light Mode */
+.light-mode .btn-secondary {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+.light-mode .btn-secondary:hover {
+  background: #e2e8f0 !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+/* 7. Modal structures in Light Mode */
+.light-mode .modal-content {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15) !important;
+}
+
+.light-mode .modal-overlay {
+  background: rgba(15, 23, 42, 0.4) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+/* 8. Dropdown options in Light Mode */
+.light-mode select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* 9. Slot Machine animations contrast in Light Mode */
+.light-mode .rolled-winner-name {
+  color: var(--primary) !important;
+}
+
+.light-mode .slot-container {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* 10. Landing Page sections in Light Mode */
+.light-mode header.glass-card {
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Force dark text for landing page main heading (removes white gradient clip) */
+.light-mode main h1 {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Fix header secondary button (login) contrast in Light Mode */
+.light-mode header a[href="/auth/login"] {
+  background: #f1f5f9 !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+  color: var(--text-primary) !important;
+}
+
+.light-mode header a[href="/auth/login"]:hover {
+  background: #e2e8f0 !important;
+  border-color: rgba(15, 23, 42, 0.18) !important;
+}
+
+/* Fix interactive demo button contrast in Light Mode */
+.light-mode .landing-ctas button {
+  background-color: rgba(5, 150, 105, 0.08) !important;
+  border: 1px solid rgba(5, 150, 105, 0.25) !important;
+  color: #047857 !important;
+  box-shadow: 0 4px 15px rgba(5, 150, 105, 0.05) !important;
+}
+
+.light-mode .landing-ctas button:hover {
+  background-color: rgba(5, 150, 105, 0.12) !important;
+  border-color: rgba(5, 150, 105, 0.35) !important;
+}
+
+/* Fix features cards structure in Light Mode */
+.light-mode main .glass-card {
+  background: #ffffff !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.03) !important;
+}
+
+.light-mode main .glass-card h3 {
+  color: var(--text-primary) !important;
+}
+
+/* Fix footer top border contrast in Light Mode */
+.light-mode footer {
+  border-top-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+
+/* 11. Custom inline-style border and background correction for Light Mode */
+.light-mode [style*="border-color: rgba(255,255,255"],
+.light-mode [style*="border-color:rgba(255,255,255"],
+.light-mode [style*="border-color: rgba(255, 255, 255"],
+.light-mode [style*="border-color:rgba(255, 255, 255"],
+.light-mode [style*="border: 1px solid rgba(255,255,255"],
+.light-mode [style*="border:1px solid rgba(255,255,255"],
+.light-mode [style*="border: 1px solid rgba(255, 255, 255"],
+.light-mode [style*="border:1px solid rgba(255, 255, 255"] {
+  border-color: rgba(15, 23, 42, 0.15) !important;
+}
+
+.light-mode [style*="background: rgba(0,0,0"],
+.light-mode [style*="background:rgba(0,0,0"],
+.light-mode [style*="background: rgba(0, 0, 0"],
+.light-mode [style*="background:rgba(0, 0, 0"],
+.light-mode [style*="background-color: rgba(0,0,0"],
+.light-mode [style*="background-color:rgba(0,0,0"] {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+}
+
+/* 12. Fix inline wizard step indicator backgrounds */
+.light-mode [style*="background: rgba(255,255,255,0.08)"],
+.light-mode [style*="background:rgba(255,255,255,0.08)"],
+.light-mode [style*="background: rgba(255, 255, 255, 0.08)"] {
+  background-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+/* 13. Ensure inline code tags have solid contrast */
+.light-mode code {
+  background: rgba(15, 23, 42, 0.06) !important;
+  color: var(--primary) !important;
+}
+
+/* 14. Fix Toggle Lunas / Batalkan Lunas button contrast in Light Mode */
+.light-mode [style*="color: rgb(110, 231, 183)"],
+.light-mode [style*="color:#6ee7b7"],
+.light-mode [style*="color: #6ee7b7"] {
+  color: #059669 !important; /* Emerald 600 - hijau sangat jelas */
+  border-color: rgba(5, 150, 105, 0.25) !important;
+  background-color: rgba(5, 150, 105, 0.05) !important;
+}
+
+.light-mode [style*="color: rgb(252, 165, 165)"],
+.light-mode [style*="color:#fca5a5"],
+.light-mode [style*="color: #fca5a5"] {
+  color: #dc2626 !important; /* Crimson 600 - merah sangat jelas */
+  border-color: rgba(220, 38, 38, 0.25) !important;
+  background-color: rgba(220, 38, 38, 0.05) !important;
+}
+
+/* 15. Fix Migration Tab Switcher contrast in Light Mode */
+.light-mode .migration-tabs {
+  background-color: rgba(15, 23, 42, 0.05) !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+.light-mode .migration-tabs button.btn {
+  color: var(--text-secondary) !important;
+}
+
+.light-mode .migration-tabs button.btn[style*="background: var(--primary)"],
+.light-mode .migration-tabs button.btn[style*="background:var(--primary)"] {
+  color: #ffffff !important; /* Yang aktif tetap putih di atas background ungu */
+  background: var(--primary) !important;
+}
+
+/* 16. Fix progress bar track background in Light Mode */
+.light-mode [style*="background: rgba(255, 255, 255, 0.05)"],
+.light-mode [style*="background:rgba(255, 255, 255, 0.05)"],
+.light-mode [style*="background: rgba(255,255,255,0.05)"],
+.light-mode [style*="background:rgba(255,255,255,0.05)"] {
+  background-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* 17. High contrast for Migration & Portabilitas Accordion button (pure button) */
+.light-mode #toggle-migration-panel {
+  background-color: rgba(139, 92, 246, 0.06) !important;
+  border: 1px solid rgba(139, 92, 246, 0.15) !important;
+  color: var(--text-primary) !important;
+}
+
+.light-mode #toggle-migration-panel:hover {
+  background-color: rgba(139, 92, 246, 0.12) !important;
+}
+
+.light-mode #toggle-migration-panel span[style*="color: var(--text-secondary)"],
+.light-mode #toggle-migration-panel div[style*="color: var(--text-secondary)"] {
+  color: var(--text-secondary) !important;
+}
+
+/* 18. Fix Backup Data grid summary cards (tab 3) in Light Mode */
+.light-mode [style*="gridTemplateColumns: repeat(auto-fit, minmax(150px, 1fr))"],
+.light-mode [style*="gridTemplateColumns:repeat(auto-fit, minmax(150px, 1fr))"] {
+  background-color: rgba(15, 23, 42, 0.03) !important;
+  border: 1px solid rgba(15, 23, 42, 0.12) !important;
+}
+
+.light-mode [style*="gridTemplateColumns: repeat(auto-fit, minmax(150px, 1fr))"] div,
+.light-mode [style*="gridTemplateColumns:repeat(auto-fit, minmax(150px, 1fr))"] div {
+  color: var(--text-primary) !important;
+}
+
+.light-mode [style*="gridTemplateColumns: repeat(auto-fit, minmax(150px, 1fr))"] span,
+.light-mode [style*="gridTemplateColumns:repeat(auto-fit, minmax(150px, 1fr))"] span {
+  color: var(--text-primary) !important;
+}
+
+.light-mode [style*="gridTemplateColumns: repeat(auto-fit, minmax(150px, 1fr))"] span[style*="color: var(--text-secondary)"],
+.light-mode [style*="gridTemplateColumns:repeat(auto-fit, minmax(150px, 1fr))"] span[style*="color: var(--text-secondary)"] {
+  color: var(--text-secondary) !important;
+}
+
+/* 19. Fix backfill period list tags background in Light Mode */
+.light-mode [style*="background: rgba(139, 92, 246, 0.15)"],
+.light-mode [style*="background:rgba(139, 92, 246, 0.15)"] {
+  background-color: rgba(124, 58, 237, 0.1) !important;
+  color: var(--primary) !important;
+}
+
+
+
 
 /* ══════════════════════════════════════════════
    TABLET RESPONSIVE (641px – 900px)
