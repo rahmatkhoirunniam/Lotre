@@ -272,6 +272,33 @@ Mencatat pemenang undian arisan. Sekaligus menyiapkan setoran periode berikutnya
 }
 ```
 
+### `DELETE /api/winners`
+Membatalkan/menganulir pemenang undian arisan untuk putaran tertentu.
+
+**Auth:** Session diperlukan (harus Admin Tenant)  
+**Query Params:**
+- `tenantSlug` (string, required): Slug kelompok arisan aktif
+- `periodeKe` (integer, required): Periode undian yang ingin dibatalkan
+
+**Atomic Transaction:**
+1. `DELETE` record `Pemenang` untuk periode yang ditentukan
+2. `DELETE` record `Setoran` pada `periodeKe + 1` yang sebelumnya di-seed secara otomatis oleh transaksi POST
+
+**Response `200`:**
+```json
+{
+  "success": true,
+  "message": "Pemenang berhasil dibatalkan."
+}
+```
+
+**Response `404`:**
+```json
+{
+  "error": "Data pemenang tidak ditemukan."
+}
+```
+
 ---
 
 ## Workspace / Tenant

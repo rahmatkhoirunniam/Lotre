@@ -112,3 +112,55 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Gagal menyimpan data pemenang." }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const tenantSlug = url.searchParams.get("tenantSlug");
+    const periodeKe = Number(url.searchParams.get("periodeKe"));
+
+    if (!tenantSlug) {
+      return NextResponse.json({ error: "tenantSlug wajib diisi." }, { status: 400 });
+    }
+
+    if (!Number.isInteger(periodeKe) || periodeKe < 1) {
+      return NextResponse.json({ error: "periodeKe tidak valid." }, { status: 400 });
+    }
+
+    const tenantId = await resolveTenantId(tenantSlug);
+    if (!tenantId) {
+      return NextResponse.json({ error: "Tenant tidak ditemukan." }, { status: 400 });
+    }
+
+    // Check if the winner exists
+    const winner = await db.pemenang.findFirst({
+      where: { tenantId, periodeKe },
+    });
+
+    if (!winner) {
+      return NextResponse.json({ error: "Data pemenang tidak ditemukan." }, { status: 404 });
+    }
+
+    // Atomic transaction to delete winner and next period's seeded setoran
+    await db.$transaction(async (tx) => {
+      // 1. Delete winner record
+      await tx.pemenang.delete({
+        where: { id: winner.id },
+      });
+
+      // 2. Delete next period's seeded setoran records
+      await tx.setoran.deleteMany({
+        where: { tenantId, periodeKe: periodeKe + 1 },
+      });
+    });
+
+    // Invalidate caches
+    apiCache.invalidate(`members:${tenantId}`);
+    apiCache.invalidate("superadmin:tenants");
+
+    return NextResponse.json({ success: true, message: "Pemenang berhasil dibatalkan." });
+  } catch (error) {
+    console.error("DELETE /api/winners error:", error);
+    return NextResponse.json({ error: "Gagal membatalkan pemenang." }, { status: 500 });
+  }
+}

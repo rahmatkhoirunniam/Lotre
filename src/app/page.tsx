@@ -65,7 +65,7 @@ export default function Home() {
   const [winners, setWinners] = useState<Winner[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [nominalIuran, setNominalIuran] = useState<number>(200000);
-  
+
   // Member Form Form states
   const [isAddingMember, setIsAddingMember] = useState<boolean>(false);
   const [newMemberName, setNewMemberName] = useState<string>("");
@@ -73,7 +73,7 @@ export default function Home() {
 
   // Member Search state
   const [memberSearch, setMemberSearch] = useState<string>("");
-  
+
   // Settings Form states
   const [inputNominal, setInputNominal] = useState<string>("200000");
   const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
@@ -135,7 +135,7 @@ export default function Home() {
 
   // Kocokan (Draw) states
   const eligibleList = members.filter((m) => m.status === "lunas" && !m.hasWon);
-  const [rolledName, setRolledName] = useState<string>("SIAP MENGOCOK?");
+  const [rolledName, setRolledName] = useState<string>("SIAPA PEMENANGNYA?");
   const [isDrawing, setIsDrawing] = useState(false);
   const [winnerFound, setWinnerFound] = useState<Member | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -160,20 +160,20 @@ export default function Home() {
           const tenantsData = await tenantsRes.json() as { tenants: Workspace[] };
           const workspaces = tenantsData.tenants || [];
           setUserWorkspaces(workspaces);
-          
+
           if (workspaces.length > 0) {
             const querySlug = targetWorkspaceSlug || activeWorkspace;
             // Match strictly by slug if querySlug is specified
             let matched = workspaces.find((w) => w.slug === querySlug);
-            
+
             // Stale-resistant fallback to activeTenantId only if slug is not matched
             if (!matched && activeTenantId) {
               matched = workspaces.find((w) => w.id === activeTenantId);
             }
-            
+
             const selected = matched || workspaces[0];
             resolvedWorkspace = selected.slug;
-            
+
             if (activeWorkspace !== selected.slug) {
               setActiveWorkspace(selected.slug);
             }
@@ -245,7 +245,7 @@ export default function Home() {
   }, [nominalIuran]);
 
   useEffect(() => {
-    setRolledName("SIAP MENGOCOK?");
+    setRolledName("SIAPA PEMENANGNYA?");
     setWinnerFound(null);
     setShowConfetti(false);
     setMemberSearch(""); // Reset search when workspace changes
@@ -264,6 +264,34 @@ export default function Home() {
       (q === "belum menang" && !m.hasWon)
     );
   }, [members, memberSearch]);
+
+  // Cancel a winner in the database
+  const handleCancelWinner = async (period: number, name: string) => {
+    const confirmCancel = window.confirm(
+      `Apakah Anda yakin ingin membatalkan pemenang Periode ${period} (${name})?\n\nTindakan ini akan:\n1. Menghapus status pemenang untuk anggota tersebut di periode ini.\n2. Menghapus seluruh tagihan iuran otomatis yang telah di-seed untuk periode berikutnya (${period + 1}).`
+    );
+    if (!confirmCancel) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/winners?tenantSlug=${activeWorkspace}&periodeKe=${period}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json() as { success?: boolean; error?: string; message?: string };
+      if (res.ok && data.success) {
+        alert(data.message || "Pemenang berhasil dibatalkan!");
+        await fetchData();
+      } else {
+        alert(data.error || "Gagal membatalkan pemenang.");
+      }
+    } catch (err) {
+      console.error("handleCancelWinner error:", err);
+      alert("Terjadi kesalahan sistem saat membatalkan pemenang.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Toggle paid status in the database with Optimistic updates
   const handleTogglePayment = async (memberId: string) => {
@@ -376,14 +404,14 @@ export default function Home() {
         setNewWorkspacePlan("free");
         setNewWorkspaceNominal("200000");
         setIsCreatingWorkspace(false);
-        
+
         // Instant switch to the newly created workspace
         setActiveWorkspace(data.tenant.slug);
         setActiveTenantId(data.tenant.id);
-        
+
         // Alert success
         alert(data.message || "Kelompok arisan baru berhasil dibuat!");
-        
+
         // Refetch to sync all states
         await fetchData(data.tenant.slug);
       } else {
@@ -404,7 +432,7 @@ export default function Home() {
       alert("Anda harus menyetujui syarat & ketentuan pengaktifan layanan Premium.");
       return;
     }
-    
+
     setLoading(true);
     try {
       const res = await fetch("/api/tenants", {
@@ -412,9 +440,9 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tenantSlug: activeWorkspace }),
       });
-      
+
       const data = await res.json() as { success?: boolean; message?: string; error?: string };
-      
+
       if (res.ok && data.success) {
         alert(data.message || "Upgrade sukses!");
         setIsUpgradingWorkspace(false);
@@ -456,7 +484,7 @@ export default function Home() {
     console.log("handleKocokLotre clicked!");
     console.log("isDrawing:", isDrawing);
     console.log("eligibleList:", eligibleList);
-    
+
     if (isDrawing) return;
     if (eligibleList.length === 0) {
       alert("Tidak ada anggota eligible! Pastikan anggota sudah membayar LUNAS dan belum pernah menang lotre.");
@@ -519,7 +547,7 @@ export default function Home() {
 
       if (res.ok) {
         setWinnerFound(null);
-        setRolledName("SIAP MENGOCOK?");
+        setRolledName("SIAPA PEMENANGNYA?");
         setShowConfetti(false);
         await fetchData();
       } else {
@@ -747,18 +775,22 @@ export default function Home() {
           padding: "16px 0",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{
-              background: "linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%)",
-              width: "36px",
-              height: "36px",
-              borderRadius: "10px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "bold",
-              fontSize: "1.1rem",
-              boxShadow: "0 4px 12px var(--primary-glow)"
-            }}>
+            <div 
+              className="brand-logo-icon"
+              style={{
+                background: "linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%)",
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: "bold",
+                fontSize: "1.1rem",
+                boxShadow: "0 4px 12px var(--primary-glow)",
+                color: "#ffffff"
+              }}
+            >
               L
             </div>
             <span style={{ fontSize: "1.2rem", fontWeight: "700", letterSpacing: "-0.01em" }}>Lotre SaaS</span>
@@ -818,7 +850,7 @@ export default function Home() {
             }}>
               Masuk
             </Link>
-            <Link href="/auth/register" style={{
+             <Link href="/auth/register" className="btn-primary" style={{
               minHeight: "36px",
               padding: "0 16px",
               fontSize: "0.85rem",
@@ -893,7 +925,7 @@ export default function Home() {
             justifyContent: "center",
             marginBottom: "64px"
           }}>
-            <Link href="/auth/register" style={{
+            <Link href="/auth/register" className="btn-primary" style={{
               padding: "14px 28px",
               fontSize: "0.95rem",
               borderRadius: "12px",
@@ -1054,7 +1086,7 @@ export default function Home() {
 
   return (
     <div className="dashboard-container" style={{ padding: "16px", maxWidth: "1200px", margin: "0 auto", position: "relative" }}>
-      
+
       {/* Interactive Demo Banner Warning */}
       {showDemo && (
         <div style={{
@@ -1351,8 +1383,8 @@ export default function Home() {
           {sessionStatus === "authenticated"
             ? (userWorkspaces.find((w) => w.slug === activeWorkspace)?.namaGrup || "Memuat Kelompok...")
             : activeWorkspace === "keluarga-cemara"
-            ? "Lotre Keluarga Cemara"
-            : "RT 05 Lotre Digital"}
+              ? "Lotre Keluarga Cemara"
+              : "RT 05 Lotre Digital"}
         </h2>
 
         {/* Plan Status & Upgrade Trigger */}
@@ -1467,7 +1499,7 @@ export default function Home() {
 
         {/* Card 4: Status Kelayakan */}
         <div className="glass-card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "500" }}>ELIGIBLE KOCAK</span>
+          <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "500" }}>ELIGIBLE KOCOK</span>
           <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginTop: "12px", marginBottom: "8px" }}>
             <span style={{ fontSize: "2.2rem", fontWeight: "700" }}>{eligibleList.length}</span>
             <span style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>Peserta</span>
@@ -1516,7 +1548,7 @@ export default function Home() {
 
             <div style={{ zIndex: 1, textAlign: "center", width: "100%" }}>
               <span className="badge badge-primary" style={{ marginBottom: "20px" }}>Digital Kocokan Machine</span>
-              
+
               {/* Raffle Window Display */}
               <div style={{
                 background: "rgba(0, 0, 0, 0.4)",
@@ -1544,7 +1576,7 @@ export default function Home() {
                     MENGUNDI PEMENANG...
                   </div>
                 )}
-                
+
                 <h3 style={{
                   fontSize: rolledName.length > 18 ? "1.25rem" : "1.75rem",
                   fontWeight: "700",
@@ -1571,7 +1603,7 @@ export default function Home() {
                     borderRadius: "14px"
                   }}
                 >
-                  {isDrawing ? "Sedang Mengocok..." : "Mulai Kocok Lotre"}
+                  {isDrawing ? "Sedang Mengocok..." : "Mulai Acak Nama"}
                 </button>
               ) : (
                 /* Action Button: Confirm Winner */
@@ -1603,7 +1635,7 @@ export default function Home() {
                   <button
                     onClick={() => {
                       setWinnerFound(null);
-                      setRolledName("SIAP MENGOCOK?");
+                      setRolledName("SIAPA PEMENANGNYA?");
                       setShowConfetti(false);
                     }}
                     className="btn btn-secondary"
@@ -1629,31 +1661,60 @@ export default function Home() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {winners.map((win) => (
-                  <div
-                    key={win.period}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "12px 16px",
-                      borderRadius: "10px",
-                      background: "rgba(255, 255, 255, 0.02)",
-                      border: "1px solid rgba(255, 255, 255, 0.04)"
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: "600" }}>PERIODE {win.period}</div>
-                      <div style={{ fontSize: "0.95rem", fontWeight: "600", marginTop: "2px" }}>{win.name}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: "0.9rem", color: "#34d399", fontWeight: "600" }}>
-                        Rp {win.amount.toLocaleString("id-ID")}
+                {winners.map((win) => {
+                  const isLatest = winners.indexOf(win) === 0;
+                  return (
+                    <div
+                      key={win.period}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        padding: "12px 16px",
+                        borderRadius: "10px",
+                        background: "rgba(255, 255, 255, 0.02)",
+                        border: "1px solid rgba(255, 255, 255, 0.04)"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        {isLatest && (
+                          <button
+                            onClick={() => handleCancelWinner(win.period, win.name)}
+                            title="Batalkan Pemenang Putaran Ini"
+                            style={{
+                              background: "rgba(239, 68, 68, 0.1)",
+                              border: "1px solid rgba(239, 68, 68, 0.25)",
+                              color: "#ef4444",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "6px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              fontSize: "0.8rem",
+                              transition: "all 0.2s",
+                              flexShrink: 0
+                            }}
+                            className="btn-cancel-winner"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                        <div>
+                          <div style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: "600" }}>PERIODE {win.period}</div>
+                          <div style={{ fontSize: "0.95rem", fontWeight: "600", marginTop: "2px" }}>{win.name}</div>
+                        </div>
                       </div>
-                      <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "2px" }}>{win.date}</div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: "0.9rem", color: "#34d399", fontWeight: "600" }}>
+                          Rp {win.amount.toLocaleString("id-ID")}
+                        </div>
+                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "2px" }}>{win.date}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -1676,7 +1737,7 @@ export default function Home() {
                 Tandai lunas setoran iuran anggota sebelum melaksanakan kocokan lotre
               </p>
             </div>
-            
+
             <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", display: "flex", gap: "12px" }}>
               <div>Lunas: <span style={{ color: "#34d399", fontWeight: "600" }}>{lunasMembersCount}</span></div>
               <div>Belum: <span style={{ color: "#fbbf24", fontWeight: "600" }}>{totalMembers - lunasMembersCount}</span></div>
@@ -1912,7 +1973,7 @@ export default function Home() {
             >
               {isSavingSettings ? "Menyimpan Pengaturan..." : "Simpan Pengaturan"}
             </button>
-            
+
             <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: "1.4", margin: 0 }}>
               💡 Pembaruan nominal iuran akan otomatis menyesuaikan nilai iuran anggota yang belum membayar pada putaran berjalan agar kalkulasi target kas tetap sinkron.
             </p>

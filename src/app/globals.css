@@ -8,13 +8,17 @@
   --border-glow: rgba(139, 92, 246, 0.2);
   --text-primary: #ffffff;
   --text-secondary: #94a3b8;
-  --primary: #8b5cf6; /* Royal Violet */
+  --primary: #8b5cf6;
+  /* Royal Violet */
   --primary-glow: rgba(139, 92, 246, 0.4);
-  --success: #10b981; /* Emerald Green */
+  --success: #10b981;
+  /* Emerald Green */
   --success-glow: rgba(16, 185, 129, 0.3);
-  --warning: #f59e0b; /* Amber */
-  --error: #ef4444; /* Crimson Red */
-  
+  --warning: #f59e0b;
+  /* Amber */
+  --error: #ef4444;
+  /* Crimson Red */
+
   /* Ambient Background Glow Variables */
   --bg-ambient-1: rgba(139, 92, 246, 0.15);
   --bg-ambient-2: rgba(16, 185, 129, 0.1);
@@ -23,19 +27,24 @@
 }
 
 .light-mode {
-  --bg-primary: #f8fafc; /* Slate 50 */
+  --bg-primary: #f8fafc;
+  /* Slate 50 */
   --bg-surface: rgba(255, 255, 255, 0.75);
   --border-glass: rgba(15, 23, 42, 0.08);
   --border-glow: rgba(139, 92, 246, 0.12);
-  --text-primary: #0f172a; /* Slate 900 */
-  --text-secondary: #475569; /* Slate 600 */
-  --primary: #7c3aed; /* Deep Violet */
+  --text-primary: #0f172a;
+  /* Slate 900 */
+  --text-secondary: #475569;
+  /* Slate 600 */
+  --primary: #7c3aed;
+  /* Deep Violet */
   --primary-glow: rgba(124, 58, 237, 0.25);
-  --success: #059669; /* Darker Emerald */
+  --success: #059669;
+  /* Darker Emerald */
   --success-glow: rgba(5, 150, 105, 0.15);
   --warning: #d97706;
   --error: #dc2626;
-  
+
   /* Ambient Background Glow Variables */
   --bg-ambient-1: rgba(124, 58, 237, 0.06);
   --bg-ambient-2: rgba(5, 150, 105, 0.05);
@@ -50,14 +59,18 @@
 }
 
 /* Global input / select baseline for mobile-friendliness */
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: var(--font-sans);
-  font-size: 16px; /* Prevents iOS zoom-on-focus */
+  font-size: 16px;
+  /* Prevents iOS zoom-on-focus */
   min-height: 44px;
   touch-action: manipulation;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   min-height: 100dvh;
   background-color: var(--bg-primary);
@@ -101,26 +114,39 @@ body::after {
 
 /* Animations */
 @keyframes glowShift1 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(15%, 10%) scale(1.2); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate(15%, 10%) scale(1.2);
+  }
 }
 
 @keyframes glowShift2 {
-  0% { transform: translate(0, 0) scale(1); }
-  100% { transform: translate(-10%, -15%) scale(1.1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  100% {
+    transform: translate(-10%, -15%) scale(1.1);
+  }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: rgba(8, 11, 17, 0.8);
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--primary);
 }
@@ -157,8 +183,10 @@ body::after {
   gap: 8px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
-  touch-action: manipulation; /* Mobile responsiveness */
-  min-height: 48px; /* Touch target */
+  touch-action: manipulation;
+  /* Mobile responsiveness */
+  min-height: 48px;
+  /* Touch target */
 }
 
 .btn-primary {
@@ -301,6 +329,7 @@ body::after {
     transform: translateY(0) rotate(0deg);
     opacity: 1;
   }
+
   100% {
     transform: translateY(400px) rotate(720deg);
     opacity: 0;
@@ -309,8 +338,13 @@ body::after {
 
 /* Pulse animation (used by pending badges) */
 @keyframes pulse {
-  0% { opacity: 1; }
-  100% { opacity: 0.65; }
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.65;
+  }
 }
 
 /* Responsive Split screen layout on desktop viewports */
@@ -508,7 +542,8 @@ body::after {
   /* ── Modal: full-screen friendly ── */
   .modal-overlay {
     padding: 12px !important;
-    align-items: flex-end !important; /* Bottom sheet on mobile */
+    align-items: flex-end !important;
+    /* Bottom sheet on mobile */
   }
 
   .modal-content {
@@ -535,7 +570,7 @@ body::after {
     padding: 14px !important;
   }
 
-  .stats-grid .glass-card > div > span:first-child {
+  .stats-grid .glass-card>div>span:first-child {
     font-size: 1.6rem !important;
   }
 
@@ -677,11 +712,11 @@ body::after {
 }
 
 /* 2. Guarantee headers, strong texts, and dashboard labels are obsidian dark in Light Mode */
-.light-mode h1, 
-.light-mode h2, 
-.light-mode h3, 
-.light-mode h4, 
-.light-mode h5, 
+.light-mode h1,
+.light-mode h2,
+.light-mode h3,
+.light-mode h4,
+.light-mode h5,
 .light-mode h6,
 .light-mode strong,
 .light-mode b,
@@ -870,7 +905,8 @@ body::after {
 .light-mode [style*="color: rgb(110, 231, 183)"],
 .light-mode [style*="color:#6ee7b7"],
 .light-mode [style*="color: #6ee7b7"] {
-  color: #059669 !important; /* Emerald 600 - hijau sangat jelas */
+  color: #059669 !important;
+  /* Emerald 600 - hijau sangat jelas */
   border-color: rgba(5, 150, 105, 0.25) !important;
   background-color: rgba(5, 150, 105, 0.05) !important;
 }
@@ -878,7 +914,8 @@ body::after {
 .light-mode [style*="color: rgb(252, 165, 165)"],
 .light-mode [style*="color:#fca5a5"],
 .light-mode [style*="color: #fca5a5"] {
-  color: #dc2626 !important; /* Crimson 600 - merah sangat jelas */
+  color: #dc2626 !important;
+  /* Crimson 600 - merah sangat jelas */
   border-color: rgba(220, 38, 38, 0.25) !important;
   background-color: rgba(220, 38, 38, 0.05) !important;
 }
@@ -895,7 +932,8 @@ body::after {
 
 .light-mode .migration-tabs button.btn[style*="background: var(--primary)"],
 .light-mode .migration-tabs button.btn[style*="background:var(--primary)"] {
-  color: #ffffff !important; /* Yang aktif tetap putih di atas background ungu */
+  color: #ffffff !important;
+  /* Yang aktif tetap putih di atas background ungu */
   background: var(--primary) !important;
 }
 
@@ -952,6 +990,75 @@ body::after {
   color: var(--primary) !important;
 }
 
+/* 20. Guarantee that any text inside primary, success, active migration tabs, brand logo icon, and premium buttons remains white */
+.light-mode .btn-primary,
+.light-mode .btn-primary *,
+.light-mode .btn-success,
+.light-mode .btn-success *,
+.light-mode .active-migration-tab,
+.light-mode .active-migration-tab *,
+.light-mode .brand-logo-icon,
+.light-mode .brand-logo-icon * {
+  color: #ffffff !important;
+}
+
+/* 21. High-contrast, premium modern styling for status badges in Light Mode */
+.light-mode .badge:not([style*="background"]) {
+  border-width: 1px !important;
+  border-style: solid !important;
+}
+
+.light-mode .badge-primary:not([style*="background"]) {
+  background-color: rgba(139, 92, 246, 0.08) !important;
+  border-color: rgba(139, 92, 246, 0.25) !important;
+  color: #6d28d9 !important;
+}
+.light-mode .badge-primary:not([style*="background"]) * {
+  color: #6d28d9 !important;
+}
+
+.light-mode .badge-success:not([style*="background"]) {
+  background-color: rgba(16, 185, 129, 0.08) !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  color: #047857 !important;
+}
+.light-mode .badge-success:not([style*="background"]) * {
+  color: #047857 !important;
+}
+
+.light-mode .badge-warning:not([style*="background"]) {
+  background-color: rgba(245, 158, 11, 0.08) !important;
+  border-color: rgba(245, 158, 11, 0.25) !important;
+  color: #b45309 !important;
+}
+.light-mode .badge-warning:not([style*="background"]) * {
+  color: #b45309 !important;
+}
+
+.light-mode .badge-secondary:not([style*="background"]) {
+  background-color: rgba(100, 116, 139, 0.08) !important;
+  border-color: rgba(100, 116, 139, 0.2) !important;
+  color: #475569 !important;
+}
+.light-mode .badge-secondary:not([style*="background"]) * {
+  color: #475569 !important;
+}
+
+.light-mode .badge-danger:not([style*="background"]) {
+  background-color: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  color: #b91c1c !important;
+}
+.light-mode .badge-danger:not([style*="background"]) * {
+  color: #b91c1c !important;
+}
+
+/* 22. Cancel winner button micro-interaction */
+.btn-cancel-winner:hover {
+  background-color: rgba(239, 68, 68, 0.22) !important;
+  transform: scale(1.06);
+}
+
 
 
 
@@ -982,4 +1089,3 @@ body::after {
     overflow-x: auto !important;
   }
 }
-

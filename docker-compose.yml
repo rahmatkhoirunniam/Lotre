@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  lotre-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lotre-arisan-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./db:/app/db
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/db/prod.db
+      - NEXTAUTH_SECRET=ganti-dengan-secret-jwt-yang-sangat-aman-123456789
+      - NEXTAUTH_URL=https://arisan.domainanda.com

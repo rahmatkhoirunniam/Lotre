@@ -134,24 +134,27 @@ Untuk memukau pengguna saat pertama kali mengakses, antarmuka dirancang dengan g
 
 ---
 
-## 6. Persiapan Progressive Web App (PWA) untuk Pengguna Mobile
+### 6. Implementasi & Aktivasi Progressive Web App (PWA) [SELESAI]
 
-Mengingat sebagian besar pengguna dan admin arisan akan mengakses aplikasi ini melalui handphone (HP), sistem dipersiapkan agar dapat diinstal dan dijalankan layaknya aplikasi mobile native melalui teknologi **PWA (Progressive Web App)**.
+Mengingat sebagian besar pengguna dan admin arisan akan mengakses aplikasi ini melalui handphone (HP), sistem **telah sepenuhnya dikonfigurasi dan diaktifkan** sebagai **PWA (Progressive Web App)** berstandar produksi. Aplikasi kini dapat diinstal langsung ke Home Screen HP layaknya aplikasi native.
 
-### A. Konfigurasi Web App Manifest (`manifest.json`)
-Aplikasi harus menyertakan manifest file di folder `public` dengan spesifikasi berikut:
+### A. Konfigurasi Web App Manifest Dinamis (`src/app/manifest.ts`)
+Aplikasi menyajikan manifest secara otomatis di `/manifest.webmanifest` menggunakan routing dinamis Next.js:
 - **`name`**: `Lotre - Sistem Informasi Arisan Digital`
 - **`short_name`**: `Lotre`
 - **`start_url`**: `/`
-- **`display`**: `standalone` (menghilangkan bar navigasi browser untuk nuansa aplikasi asli/native)
+- **`display`**: `standalone` (menghilangkan bar navigasi peramban untuk nuansa aplikasi native)
 - **`orientation`**: `portrait` (mengunci tampilan potret yang ramah HP)
-- **`background_color`**: `#0b0f19` (menghindari kedipan layar putih saat loading)
-- **`theme_color`**: `#8b5cf6` (mewarnai status bar HP pengguna dengan warna aksen Violet kita)
-- **`icons`**: Menyediakan ikon berkualitas tinggi dengan ukuran `192x192` dan `512x512` piksel dalam format PNG.
+- **`background_color`**: `#0b0f19` (warna gelap arisan malam hari untuk kelancaran *splash screen*)
+- **`theme_color`**: `#8b5cf6` (mewarnai status bar HP dengan warna aksen ungu brand utama)
+- **`icons`**:
+  * `/icon-192.png`: Resolusi 192x192px untuk ikon menu/home screen standar.
+  * `/icon-512.png`: Resolusi 512x512px bertipe *maskable icon* berkualitas ultra-tinggi yang dibuat secara premium agar serasi di sistem operasi Android & iOS.
 
-### B. Service Worker & Offline Capability
-- Menggunakan library Next.js PWA (seperti `@ducanh2912/next-pwa` atau custom service worker) untuk menangani caching aset statis (CSS, Fonts, JS).
-- **Layar Offline Kustom**: Jika koneksi terputus, aplikasi tidak akan crash/menampilkan error browser standar, melainkan menampilkan halaman offline yang elegan yang menyatakan koneksi internet terputus namun data lokal tetap aman dibaca.
+### B. Service Worker & Caching Strategis (`public/sw.js` & `src/app/layout.tsx`)
+- **Registrasi Otomatis:** Service worker didaftarkan secara non-blocking di dalam tag `<head>` pada tata letak utama (`layout.tsx`).
+- **Offline Capability:** Menggunakan service worker kustom `sw.js` berbasis strategi *Network-first dengan Cache fallback*. CSS, font, gambar logo, dan file statis utama di-cache secara otomatis untuk mempercepat waktu pemuatan halaman dan memberikan ketahanan saat koneksi internet lambat atau terputus.
+- **Pengecualian Dinamis:** Rute API (`/api/*`) secara aman dikecualikan dari *caching* untuk menjamin data kas, iuran lunas, dan pemenang kocokan selalu aktual 100%.
 
 ### C. Desain Mobile-First & Aksesibilitas HP
 - **Touch Targets**: Semua tombol interaktif, checkbox, dan link navigasi wajib memiliki ukuran minimal `48px x 48px` untuk mencegah salah klik oleh jari pengguna.

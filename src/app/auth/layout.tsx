@@ -13,6 +13,7 @@ export default function AuthLayout({
     if (typeof window !== "undefined") {
       const savedTheme = localStorage.getItem("lotre_theme") as "dark" | "light" | null;
       const currentTheme = savedTheme || "dark";
+      // eslint-disable-next-line
       setTheme(currentTheme);
       if (currentTheme === "light") {
         document.documentElement.classList.add("light-mode");
