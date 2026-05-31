@@ -5,7 +5,13 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting seed database...");
 
-  // 1. CLEAR EXISTING DATA
+  // 1. SAFETY CHECK: ONLY SEED IF DB IS EMPTY
+  const userCount = await prisma.user.count();
+  if (userCount > 0) {
+    console.log("⚠️ Database already contains users. Skipping seeding to prevent data loss.");
+    return;
+  }
+
   console.log("🧹 Clearing old database records...");
   await prisma.pemenang.deleteMany({});
   await prisma.setoran.deleteMany({});

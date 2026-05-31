@@ -41,8 +41,8 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 
-# Add entrypoint script to handle startup database schema push
-RUN printf '#!/bin/sh\nnpx prisma db push\nnpm run start\n' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+# Add entrypoint script to handle startup database schema push and conditional seeding
+RUN printf '#!/bin/sh\nnpx prisma db push\nnode prisma/seed.js\nnpm run start\n' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 EXPOSE 3000
 
