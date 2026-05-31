@@ -21,21 +21,49 @@ export async function middleware(request: NextRequest) {
   }
 
   // 2. ROUTING ARCHITECTURE: Multi-Tenant Subdomain Rewrites
-  // Split hostname to identify subdomain (e.g. "keluarga-cemara.lotre.com")
-  const hostnameParts = hostname.split(".");
-  const subdomain = hostnameParts[0];
+  const cleanHost = hostname.split(":")[0].toLowerCase();
 
-  // Define host exclusions (root, www, localhost developers)
-  const isMainDomain =
-    hostname === "lotre.com" ||
-    hostname.startsWith("localhost") ||
-    subdomain === "www" ||
-    subdomain === "";
+  // Get configured main domain from NEXTAUTH_URL environment variable, fallback to "lotre.com"
+  const nextAuthUrl = process.env.NEXTAUTH_URL;
+  let mainDomain = "lotre.com";
+  try {
+    if (nextAuthUrl) {
+      mainDomain = new URL(nextAuthUrl).hostname.toLowerCase();
+    }
+  } catch (e) {
+    // Keep fallback
+  }
 
-  if (!isMainDomain && subdomain) {
+  // Exclude raw IPs, localhost, or single-label names (.local)
+  const isIPAddress = /^(?:\d{1,3}\.){3}\d{1,3}$/.test(cleanHost);
+  const isLocalhost = cleanHost === "localhost" || cleanHost.endsWith(".local");
+  
+  let isMainDomain = false;
+  let tenantSlug = "";
+
+  if (isIPAddress || isLocalhost) {
+    isMainDomain = true;
+  } else if (cleanHost === mainDomain || cleanHost === `www.${mainDomain}`) {
+    isMainDomain = true;
+  } else if (cleanHost.endsWith(`.${mainDomain}`)) {
+    // E.g. cleanHost = "rt05.arisan.domainanda.com", mainDomain = "arisan.domainanda.com"
+    // tenantSlug is "rt05"
+    tenantSlug = cleanHost.slice(0, cleanHost.length - mainDomain.length - 1);
+    
+    // Ignore "www" or empty tenant slugs
+    if (tenantSlug === "www" || !tenantSlug) {
+      isMainDomain = true;
+      tenantSlug = "";
+    }
+  } else {
+    // If accessed via another unknown domain/host directly, default to main domain to avoid 404
+    isMainDomain = true;
+  }
+
+  if (!isMainDomain && tenantSlug) {
     // Perform transparent internal rewrite to dynamic [tenant] folders
-    // Path /dashboard on "tenant-slug.lotre.com" -> /_tenants/tenant-slug/dashboard internally
-    url.pathname = `/_tenants/${subdomain}${url.pathname}`;
+    // Path /dashboard on "tenant-slug.domain.com" -> /_tenants/tenant-slug/dashboard internally
+    url.pathname = `/_tenants/${tenantSlug}${url.pathname}`;
     return NextResponse.rewrite(url);
   }
 
