@@ -3,11 +3,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Copy dependency manifests
-COPY package*.json ./
+COPY package.json ./
 COPY prisma ./prisma/
 
 # Install dependencies (including devDependencies for build)
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the application
 COPY . .
@@ -30,7 +30,6 @@ ENV PORT=3000
 
 # Copy necessary production files from builder
 COPY --from=builder /app/package.json ./
-COPY --from=builder /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public

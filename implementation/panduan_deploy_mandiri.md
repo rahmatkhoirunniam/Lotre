@@ -17,9 +17,10 @@ Untuk memudahkan manajemen berkas dan pencadangan database, kita akan memanfaatk
 Sehingga strukturnya menjadi:
 * `/DATA/AppData/lotre/docker-compose.yml`
 * `/DATA/AppData/lotre/Dockerfile`
+* `/DATA/AppData/lotre/.dockerignore` (Sangat penting agar cache macOS tidak mengotori container!)
 * `/DATA/AppData/lotre/db/` (Kosong terlebih dahulu, database `prod.db` akan terbuat otomatis)
 
-*Catatan: Salin seluruh kode sumber proyek Lotre ke folder `/DATA/AppData/lotre/` tersebut menggunakan SFTP, Git, atau fitur upload berkas di CasaOS.*
+*Catatan: Salin seluruh kode sumber proyek Lotre (termasuk berkas `.dockerignore` bawaan yang sudah kami buat) ke folder `/DATA/AppData/lotre/` tersebut menggunakan SFTP, Git, atau fitur upload berkas di CasaOS. Jangan lupa untuk menyertakan berkas tersembunyi seperti `.dockerignore` dan `.env`.*
 
 ---
 
