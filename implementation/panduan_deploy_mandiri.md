@@ -105,17 +105,41 @@ NEXTAUTH_URL=https://arisan.domainanda.com
 
 ## 💾 Langkah 5: Pemeliharaan & Pencadangan (*Backups*)
 
-Salah satu keunggulan terbesar arsitektur homelab SQLite adalah kemudahan pencadangan data:
+Salah satu keunggulan terbesar arsitektur homelab SQLite adalah kemudahan pencadangan dan pengelolaan data langsung:
+
 1. **Cara Backup Database:**
    Anda hanya perlu menyalin satu berkas di lokasi CasaOS ini secara berkala:
    ```bash
    cp /DATA/AppData/lotre/db/prod.db /DATA/AppData/lotre/db/prod_backup_$(date +%F).db
    ```
-2. **Cara Melihat Log Kontainer:**
+
+2. **Cara Mengakses & Mengedit Database Langsung:**
+   Karena menggunakan SQLite, seluruh data disimpan dalam satu berkas fisik di `/DATA/AppData/lotre/db/prod.db`. Anda memiliki dua cara terbaik untuk melihat atau mengedit data secara visual:
+
+   * **Metode A: Menggunakan Prisma Studio (GUI Web Bawaan - Sangat Direkomendasikan)**
+     *(Catatan: Pastikan Anda sudah memetakan port `"5555:5555"` pada berkas `docker-compose.yml` di server Anda seperti versi terbaru yang sudah kami buat, agar port 5555 dapat diakses dari browser luar kontainer)*
+
+     Anda dapat membuka aplikasi antarmuka database visual langsung melalui web browser dengan mengetikkan perintah ini di terminal server Anda:
+     ```bash
+     cd /DATA/AppData/lotre
+     docker compose exec lotre-app npx prisma studio --port 5555 --hostname 0.0.0.0
+     ```
+     Setelah perintah berjalan, buka browser dan akses alamat:
+     `http://<IP-SERVER-CASAOS>:5555`
+     Anda dapat dengan mudah mencari, menambah, memperbarui, atau menghapus baris tabel di sini. Jika sudah selesai, cukup tekan `Ctrl + C` pada terminal server Anda untuk menghentikan Prisma Studio dengan aman.
+
+   * **Metode B: Menggunakan Aplikasi Desktop (DB Browser for SQLite / DBeaver)**
+     1. Unduh berkas `/DATA/AppData/lotre/db/prod.db` dari server ke komputer Anda menggunakan aplikasi SFTP (seperti Cyberduck/FileZilla) atau fitur File Manager bawaan CasaOS.
+     2. Buka berkas tersebut menggunakan aplikasi visual gratis seperti **[DB Browser for SQLite](https://sqlitebrowser.org/)** di komputer Anda untuk melakukan manipulasi data secara offline.
+     3. Simpan perubahan Anda, lalu matikan sementara kontainer di server (`docker compose down`).
+     4. Unggah kembali berkas `prod.db` yang telah dimodifikasi untuk menimpa berkas lama di server, kemudian nyalakan kembali kontainer (`docker compose up -d`). *(Penting: Selalu buat cadangan/backup database sebelum menimpa berkas produksi!)*
+
+3. **Cara Melihat Log Kontainer:**
    ```bash
    docker logs -f lotre-arisan-app
    ```
-3. **Cara Menerapkan Pembaruan Kode Baru (*Update App*):**
+
+4. **Cara Menerapkan Pembaruan Kode Baru (*Update App*):**
    ```bash
    cd /DATA/AppData/lotre
    git pull
