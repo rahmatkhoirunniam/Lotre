@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: lotre-lotre-app:latest
     container_name: lotre-arisan-app
     restart: unless-stopped
     ports:
