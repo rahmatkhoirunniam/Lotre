@@ -38,7 +38,7 @@ Jika Anda memiliki akses SSH ke VM/LXC Proxmox yang menjalankan CasaOS:
    ```bash
    docker compose up -d --build
    ```
-3. Kontainer akan di-build secara otomatis, melakukan push skema database secara otomatis (`npx prisma db push`), dan aktif pada port **`3000`** secara instan.
+3. Kontainer akan di-build secara otomatis, melakukan push skema database secara otomatis (`npx prisma db push`), dan aktif pada port **`3005`** secara instan.
 
 ### Opsi B: Melalui Dashboard UI CasaOS (Custom Install)
 1. Buka dashboard CasaOS, klik **App Store**.
@@ -47,7 +47,7 @@ Jika Anda memiliki akses SSH ke VM/LXC Proxmox yang menjalankan CasaOS:
 4. Lengkapi form isian:
    * **App Name:** `Lotre`
    * **Icon URL:** Anda bisa menggunakan URL kustom atau kosongkan.
-   * **Port:** `3000` -> `3000`
+   * **Port:** `3005` -> `3000`
    * **Volumes:** `/DATA/AppData/lotre/db` -> `/app/db`
 5. Klik **Install** dan tunggu CasaOS mem-build aplikasi Anda di latar belakang.
 
@@ -70,7 +70,7 @@ Setelah tunnel berstatus **`ACTIVE`**, masuk ke pengaturan Tunnel tersebut dan t
 * **Domain:** `domainanda.com`
 * **Path:** (Kosongkan)
 * **Service Type:** `HTTP`
-* **URL:** `http://localhost:3000` (atau masukkan IP Proxmox/CasaOS Anda: `http://192.168.x.x:3000`)
+* **URL:** `http://localhost:3005` (atau masukkan IP Proxmox/CasaOS Anda: `http://192.168.x.x:3005`)
 
 #### B. Hostname Wildcard (Sangat Penting untuk Tenant Group!)
 Agar seluruh tenant kelompok arisan yang mendaftar (seperti `rt05.arisan.domainanda.com`) langsung aktif secara otomatis:
@@ -78,7 +78,7 @@ Agar seluruh tenant kelompok arisan yang mendaftar (seperti `rt05.arisan.domaina
 * **Domain:** `domainanda.com`
 * **Path:** (Kosongkan)
 * **Service Type:** `HTTP`
-* **URL:** `http://localhost:3000` (arahkan ke port aplikasi yang sama)
+* **URL:** `http://localhost:3005` (arahkan ke port aplikasi yang sama)
 
 ---
 
