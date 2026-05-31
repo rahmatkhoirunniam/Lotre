@@ -2,6 +2,9 @@
 FROM node:20-slim AS builder
 WORKDIR /app
 
+# Install OpenSSL for Prisma engine compatibility
+RUN apt-get update -y && apt-get install -y openssl
+
 # Copy dependency manifests
 COPY package.json ./
 COPY prisma ./prisma/
@@ -24,6 +27,9 @@ RUN npm prune --production
 # Stage 2: Production runner
 FROM node:20-slim AS runner
 WORKDIR /app
+
+# Install OpenSSL and CA certificates for Prisma runtime
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV PORT=3000
