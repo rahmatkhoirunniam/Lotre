@@ -72,7 +72,7 @@ export default function Home() {
   const [newMemberWhatsapp, setNewMemberWhatsapp] = useState<string>("");
 
   // Member Search state
-  const [memberSearch, setMemberSearch] = useState<string>( "");
+  const [memberSearch, setMemberSearch] = useState<string>("");
 
   // Edit Member states
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -164,6 +164,9 @@ export default function Home() {
   const [winnerFound, setWinnerFound] = useState<Member | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [shareAlert, setShareAlert] = useState<string | null>(null);
+  const [showIuranPreview, setShowIuranPreview] = useState(false);
+  const [showWinnerPreview, setShowWinnerPreview] = useState(false);
   const [confettiPieces, setConfettiPieces] = useState<{
     id: number;
     left: string;
@@ -701,17 +704,17 @@ export default function Home() {
       const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContext) return;
       const ctx = new AudioContext();
-      
+
       const playNote = (freq: number, start: number, duration: number) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-        
+
         osc.type = "triangle";
         osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-        
+
         gain.gain.setValueAtTime(0.12, ctx.currentTime + start);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration - 0.02);
-        
+
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start(ctx.currentTime + start);
@@ -727,6 +730,106 @@ export default function Home() {
       console.error("Audio error:", e);
     }
   }, [soundEnabled]);
+
+  const getIuranStatusText = useCallback(() => {
+    const lunasList = members.filter((m) => m.status === "lunas");
+    const belumLunasList = members.filter((m) => m.status !== "lunas");
+    const workspaceName = userWorkspaces.find((w) => w.slug === activeWorkspace)?.namaGrup || activeWorkspace;
+
+    let text = `📢 *LAPORAN IURAN ARISAN* 📢\n`;
+    text += `*Grup:* _${workspaceName}_\n`;
+    text += `*Putaran Ke:* _${currentPeriod}_\n`;
+    text += `*Nominal Iuran:* _Rp ${itemContribution.toLocaleString("id-ID")}/orang_\n\n`;
+
+    text += `-------------------------------------------\n`;
+    text += `🟢 *SUDAH LUNAS (${lunasList.length} Orang)*\n`;
+    text += `-------------------------------------------\n`;
+    if (lunasList.length === 0) {
+      text += `(Belum ada)\n`;
+    } else {
+      lunasList.forEach((m, idx) => {
+        text += `${idx + 1}. ✅ ${m.name}\n`;
+      });
+    }
+
+    text += `\n-------------------------------------------\n`;
+    text += `🔴 *BELUM BAYAR (${belumLunasList.length} Orang)*\n`;
+    text += `-------------------------------------------\n`;
+    if (belumLunasList.length === 0) {
+      text += `(Semua sudah lunas)\n`;
+    } else {
+      belumLunasList.forEach((m, idx) => {
+        text += `${idx + 1}. ❌ ${m.name}\n`;
+      });
+    }
+
+    text += `\n-------------------------------------------\n`;
+    text += `💵 *Total Kas Terkumpul:* Rp ${collectedCash.toLocaleString("id-ID")} / Rp ${targetCash.toLocaleString("id-ID")}\n`;
+    text += `-------------------------------------------\n`;
+    text += `_Dibuat otomatis oleh Aplikasi Lotre Arisan Digital_ 📦`;
+    return text;
+  }, [members, userWorkspaces, activeWorkspace, currentPeriod, itemContribution, collectedCash, targetCash]);
+
+  const getWinnerStatusText = useCallback(() => {
+    const sortedWinners = [...winners].sort((a, b) => a.period - b.period);
+    const winnerNames = new Set(sortedWinners.map((w) => w.name));
+    const belumMenangList = members.filter((m) => !winnerNames.has(m.name));
+    const workspaceName = userWorkspaces.find((w) => w.slug === activeWorkspace)?.namaGrup || activeWorkspace;
+
+    let text = `🏆 *STATUS PEMENANG ARISAN* 🏆\n`;
+    text += `*Grup:* _${workspaceName}_\n`;
+    text += `*Total Putaran:* _${winners.length} dari ${totalMembers} Periode_\n\n`;
+
+    text += `-------------------------------------------\n`;
+    text += `👑 *SUDAH PERNAH MENANG (${sortedWinners.length})*\n`;
+    text += `-------------------------------------------\n`;
+    if (sortedWinners.length === 0) {
+      text += `(Belum ada)\n`;
+    } else {
+      sortedWinners.forEach((w, idx) => {
+        text += `${idx + 1}. ${w.name}\n`;
+      });
+    }
+
+    text += `\n-------------------------------------------\n`;
+    text += `👥 *BELUM PERNAH MENANG (${belumMenangList.length})*\n`;
+    text += `-------------------------------------------\n`;
+    if (belumMenangList.length === 0) {
+      text += `(Semua anggota sudah pernah menang)\n`;
+    } else {
+      belumMenangList.forEach((m, idx) => {
+        text += `${idx + 1}. ${m.name}\n`;
+      });
+    }
+
+    text += `\n-------------------------------------------\n`;
+    text += `_Dibuat otomatis oleh Aplikasi Lotre Arisan Digital_ 📦`;
+    return text;
+  }, [winners, members, userWorkspaces, activeWorkspace, totalMembers]);
+
+  const handleCopyIuranStatus = () => {
+    try {
+      const text = getIuranStatusText();
+      navigator.clipboard.writeText(text);
+      setShareAlert("Laporan iuran disalin ke clipboard!");
+      setTimeout(() => setShareAlert(null), 3000);
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyalin teks.");
+    }
+  };
+
+  const handleCopyWinnerStatus = () => {
+    try {
+      const text = getWinnerStatusText();
+      navigator.clipboard.writeText(text);
+      setShareAlert("Status pemenang disalin ke clipboard!");
+      setTimeout(() => setShareAlert(null), 3000);
+    } catch (err) {
+      console.error(err);
+      alert("Gagal menyalin teks.");
+    }
+  };
 
   // Kocok (Lottery Draw) main logic
   const handleKocokLotre = () => {
@@ -1027,7 +1130,7 @@ export default function Home() {
           padding: "16px 0",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div 
+            <div
               className="brand-logo-icon"
               style={{
                 background: "linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%)",
@@ -1102,7 +1205,7 @@ export default function Home() {
             }}>
               Masuk
             </Link>
-             <Link href="/auth/register" className="btn-primary" style={{
+            <Link href="/auth/register" className="btn-primary" style={{
               minHeight: "36px",
               padding: "0 16px",
               fontSize: "0.85rem",
@@ -2091,6 +2194,186 @@ export default function Home() {
               </p>
             </form>
           </div>
+
+          {/* Share Arisan Status Card */}
+          <div className="glass-card" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <h3 style={{ fontSize: "1.1rem", fontWeight: "600", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ display: "inline-block", width: "8px", height: "8px", background: "#3b82f6", borderRadius: "50%" }} />
+              Bagikan Status Arisan
+            </h3>
+
+            <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", margin: 0, lineHeight: "1.4" }}>
+              Salin data ke clipboard dalam format yang rapi untuk dibagikan langsung ke grup WhatsApp kelompok Anda.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* Option 1: Status Iuran */}
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.04)"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                  <div>
+                    <div style={{ fontWeight: "600", fontSize: "0.88rem", color: "#fff" }}>Status Lunas Iuran</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                      Lunas: {lunasMembersCount} · Belum: {totalMembers - lunasMembersCount}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      onClick={() => setShowIuranPreview(!showIuranPreview)}
+                      className={`btn ${showIuranPreview ? "btn-primary" : "btn-secondary"}`}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        padding: 0,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.95rem",
+                        borderRadius: "8px"
+                      }}
+                      title={showIuranPreview ? "Tutup Preview" : "Tampilkan Preview"}
+                    >
+                      👁️
+                    </button>
+                    <button
+                      onClick={handleCopyIuranStatus}
+                      className="btn btn-primary"
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        padding: 0,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.95rem",
+                        borderRadius: "8px"
+                      }}
+                      title="Salin Data"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+
+                {showIuranPreview && (
+                  <div style={{
+                    marginTop: "8px",
+                    background: "rgba(0, 0, 0, 0.3)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                    borderRadius: "8px",
+                    padding: "10px",
+                    maxHeight: "150px",
+                    overflowY: "auto",
+                    fontSize: "0.72rem",
+                    whiteSpace: "pre-wrap",
+                    fontFamily: "monospace",
+                    color: "rgba(255, 255, 255, 0.7)",
+                    textAlign: "left"
+                  }}>
+                    {getIuranStatusText()}
+                  </div>
+                )}
+              </div>
+
+              {/* Option 2: Status Pemenang */}
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "8px",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                background: "rgba(255, 255, 255, 0.02)",
+                border: "1px solid rgba(255, 255, 255, 0.04)"
+              }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                  <div>
+                    <div style={{ fontWeight: "600", fontSize: "0.88rem", color: "#fff" }}>Status Pemenang</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                      Sudah: {winners.length} · Belum: {totalMembers - winners.length}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      onClick={() => setShowWinnerPreview(!showWinnerPreview)}
+                      className={`btn ${showWinnerPreview ? "btn-primary" : "btn-secondary"}`}
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        padding: 0,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.95rem",
+                        borderRadius: "8px"
+                      }}
+                      title={showWinnerPreview ? "Tutup Preview" : "Tampilkan Preview"}
+                    >
+                      👁️
+                    </button>
+                    <button
+                      onClick={handleCopyWinnerStatus}
+                      className="btn btn-primary"
+                      style={{
+                        width: "32px",
+                        height: "32px",
+                        padding: 0,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.95rem",
+                        borderRadius: "8px"
+                      }}
+                      title="Salin Data"
+                    >
+                      📋
+                    </button>
+                  </div>
+                </div>
+
+                {showWinnerPreview && (
+                  <div style={{
+                    marginTop: "8px",
+                    background: "rgba(0, 0, 0, 0.3)",
+                    border: "1px solid rgba(255, 255, 255, 0.06)",
+                    borderRadius: "8px",
+                    padding: "10px",
+                    maxHeight: "150px",
+                    overflowY: "auto",
+                    fontSize: "0.72rem",
+                    whiteSpace: "pre-wrap",
+                    fontFamily: "monospace",
+                    color: "rgba(255, 255, 255, 0.7)",
+                    textAlign: "left"
+                  }}>
+                    {getWinnerStatusText()}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notification alert inside the card */}
+            {shareAlert && (
+              <div style={{
+                background: "rgba(16, 185, 129, 0.12)",
+                border: "1px solid rgba(16, 185, 129, 0.25)",
+                color: "#34d399",
+                padding: "10px 14px",
+                borderRadius: "8px",
+                fontSize: "0.8rem",
+                textAlign: "center",
+                animation: "fadeIn 0.3s"
+              }}>
+                ✅ {shareAlert}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Column: Member list & Contribution grid */}
@@ -2427,9 +2710,9 @@ export default function Home() {
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
                         </button>
-                        
+
                         {activeMenuMemberId === member.id && (
-                          <div 
+                          <div
                             className="actions-dropdown-menu"
                             style={{
                               position: "absolute",
@@ -2482,7 +2765,7 @@ export default function Home() {
                                 </>
                               )}
                             </button>
-                            
+
                             <button
                               onClick={() => {
                                 setActiveMenuMemberId(null);
@@ -2509,7 +2792,7 @@ export default function Home() {
                               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flexShrink: 0 }}><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                               <div style={{ flex: 1, textAlign: "left" }}>Ubah Data</div>
                             </button>
-                            
+
                             <button
                               onClick={() => {
                                 setActiveMenuMemberId(null);
