@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { resolveTenantId } from "@/lib/tenant";
+import { apiCache } from "@/lib/cache";
 
 interface PastWinnerEntry {
   anggotaId: string;
@@ -130,6 +131,10 @@ export async function POST(request: NextRequest) {
         })),
       });
     });
+
+    // Invalidate caches: member data & superadmin aggregate stats
+    apiCache.invalidate(`members:${tenantId}`);
+    apiCache.invalidate("superadmin:tenants");
 
     return NextResponse.json({
       message: `Backfill berhasil. ${pastWinners.length} putaran lampau direkonstruksi. Putaran aktif: ${parsedCurrentPeriod}.`,

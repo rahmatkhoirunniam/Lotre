@@ -163,6 +163,7 @@ export default function Home() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [winnerFound, setWinnerFound] = useState<Member | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const [confettiPieces, setConfettiPieces] = useState<{
     id: number;
     left: string;
@@ -252,6 +253,23 @@ export default function Home() {
 
         setMembers(mappedMembers);
         setWinners(mappedWinners);
+
+        // Pre-populate backfill wizard with existing winners from database
+        const maxWinnerPeriod = mappedWinners.length > 0 ? Math.max(...mappedWinners.map((w) => w.period)) : 0;
+        const initialBackfillPeriod = Math.max(2, maxWinnerPeriod + 1);
+
+        const initialBackfillWinners = Array.from({ length: initialBackfillPeriod - 1 }, (_, i) => {
+          const period = i + 1;
+          const winnerMember = data.members.find((m) => m.winners.some((w) => w.periodeKe === period));
+          return {
+            periodeKe: period,
+            anggotaId: winnerMember?.id ?? "",
+          };
+        });
+
+        setBackfillNominal(data.nominalIuran ?? 200000);
+        setBackfillCurrentPeriod(initialBackfillPeriod);
+        setBackfillWinners(initialBackfillWinners);
       }
     } catch (err) {
       console.error("Fetch database error:", err);
@@ -275,6 +293,7 @@ export default function Home() {
     setMemberSearch(""); // Reset search when workspace changes
     setStatusFilter("all"); // Reset status filter when workspace changes
     setSelectedMemberIds([]); // Reset bulk selections when workspace changes
+    setShowAllWinners(false); // Reset collapsed winners list when workspace changes
   }, [members]);
 
   // ── Client-side filtered member list (instant, zero API calls) ──────────────
@@ -650,6 +669,65 @@ export default function Home() {
     setConfettiPieces(pieces);
   };
 
+  // Web Audio API Sound Effects
+  const playTickSound = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(800, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.08);
+
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08);
+    } catch (e) {
+      console.error("Audio error:", e);
+    }
+  }, [soundEnabled]);
+
+  const playWinSound = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      
+      const playNote = (freq: number, start: number, duration: number) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        
+        gain.gain.setValueAtTime(0.12, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration - 0.02);
+        
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+
+      // Major chord fanfare sequence (C5 -> E5 -> G5 -> C6)
+      playNote(523.25, 0, 0.12);
+      playNote(659.25, 0.12, 0.12);
+      playNote(783.99, 0.24, 0.12);
+      playNote(1046.50, 0.36, 0.45);
+    } catch (e) {
+      console.error("Audio error:", e);
+    }
+  }, [soundEnabled]);
+
   // Kocok (Lottery Draw) main logic
   const handleKocokLotre = () => {
     console.log("handleKocokLotre clicked!");
@@ -674,6 +752,7 @@ export default function Home() {
       console.log("performShuffle frame:", duration, speed);
       const randomIndex = Math.floor(Math.random() * eligibleList.length);
       setRolledName(eligibleList[randomIndex].name);
+      playTickSound();
 
       duration += speed;
       if (duration < maxDuration) {
@@ -694,6 +773,7 @@ export default function Home() {
         setWinnerFound(selectedWinner);
         setIsDrawing(false);
         triggerConfetti();
+        playWinSound();
       }
     };
 
@@ -733,6 +813,7 @@ export default function Home() {
   // ── Migration & Portability Panel State ──────────────────────────────────
   const [showMigrationPanel, setShowMigrationPanel] = useState(false);
   const [migrationTab, setMigrationTab] = useState<"import" | "backfill" | "export">("import");
+  const [showAllWinners, setShowAllWinners] = useState<boolean>(false);
 
   // Bulk Import
   const [importText, setImportText] = useState("");
@@ -902,7 +983,7 @@ export default function Home() {
     setBackfillWinners(
       Array.from({ length: pastCount }, (_, i) => ({
         periodeKe: i + 1,
-        anggotaId: backfillWinners[i]?.anggotaId ?? "",
+        anggotaId: backfillWinners.find((w) => w.periodeKe === i + 1)?.anggotaId ?? "",
       }))
     );
   };
@@ -1702,6 +1783,33 @@ export default function Home() {
             boxShadow: "0 0 25px rgba(139, 92, 246, 0.15)",
             background: "radial-gradient(circle at center, rgba(13, 20, 35, 0.9) 0%, rgba(8, 11, 17, 0.9) 100%)"
           }}>
+            {/* Sound Toggle Button */}
+            <button
+              onClick={() => setSoundEnabled(prev => !prev)}
+              style={{
+                position: "absolute",
+                top: "16px",
+                right: "16px",
+                background: "rgba(255, 255, 255, 0.05)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                color: "#fff",
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: "pointer",
+                fontSize: "1rem",
+                transition: "all 0.2s",
+                zIndex: 10
+              }}
+              title={soundEnabled ? "Matikan Suara" : "Aktifkan Suara"}
+              className="sound-toggle-btn"
+            >
+              {soundEnabled ? "🔊" : "🔇"}
+            </button>
+
             {/* Ambient inner glow */}
             <div style={{
               position: "absolute",
@@ -1831,62 +1939,96 @@ export default function Home() {
                 Belum ada riwayat pemenang di putaran lotre ini.
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {winners.map((win) => {
-                  const isLatest = winners.indexOf(win) === 0;
-                  return (
-                    <div
-                      key={win.period}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        padding: "12px 16px",
-                        borderRadius: "10px",
-                        background: "rgba(255, 255, 255, 0.02)",
-                        border: "1px solid rgba(255, 255, 255, 0.04)"
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                        {isLatest && (
-                          <button
-                            onClick={() => handleCancelWinner(win.period, win.name)}
-                            title="Batalkan Pemenang Putaran Ini"
-                            style={{
-                              background: "rgba(239, 68, 68, 0.1)",
-                              border: "1px solid rgba(239, 68, 68, 0.25)",
-                              color: "#ef4444",
-                              width: "28px",
-                              height: "28px",
-                              borderRadius: "6px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              cursor: "pointer",
-                              fontSize: "0.8rem",
-                              transition: "all 0.2s",
-                              flexShrink: 0
-                            }}
-                            className="btn-cancel-winner"
-                          >
-                            🗑️
-                          </button>
-                        )}
-                        <div>
-                          <div style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: "600" }}>PERIODE {win.period}</div>
-                          <div style={{ fontSize: "0.95rem", fontWeight: "600", marginTop: "2px" }}>{win.name}</div>
+              <>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {(showAllWinners ? winners : winners.slice(0, 3)).map((win) => {
+                    const isLatest = winners.indexOf(win) === 0;
+                    return (
+                      <div
+                        key={win.period}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "12px 16px",
+                          borderRadius: "10px",
+                          background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid rgba(255, 255, 255, 0.04)"
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          {isLatest && (
+                            <button
+                              onClick={() => handleCancelWinner(win.period, win.name)}
+                              title="Batalkan Pemenang Putaran Ini"
+                              style={{
+                                background: "rgba(239, 68, 68, 0.1)",
+                                border: "1px solid rgba(239, 68, 68, 0.25)",
+                                color: "#ef4444",
+                                width: "28px",
+                                height: "28px",
+                                borderRadius: "6px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer",
+                                fontSize: "0.8rem",
+                                transition: "all 0.2s",
+                                flexShrink: 0
+                              }}
+                              className="btn-cancel-winner"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                          <div>
+                            <div style={{ fontSize: "0.7rem", color: "var(--primary)", fontWeight: "600" }}>PERIODE {win.period}</div>
+                            <div style={{ fontSize: "0.95rem", fontWeight: "600", marginTop: "2px" }}>{win.name}</div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: "0.9rem", color: "#34d399", fontWeight: "600" }}>
+                            Rp {win.amount.toLocaleString("id-ID")}
+                          </div>
+                          <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "2px" }}>{win.date}</div>
                         </div>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: "0.9rem", color: "#34d399", fontWeight: "600" }}>
-                          Rp {win.amount.toLocaleString("id-ID")}
-                        </div>
-                        <div style={{ fontSize: "0.7rem", color: "var(--text-secondary)", marginTop: "2px" }}>{win.date}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+
+                {winners.length > 3 && (
+                  <button
+                    onClick={() => setShowAllWinners((prev) => !prev)}
+                    className="btn btn-secondary"
+                    style={{
+                      width: "100%",
+                      marginTop: "16px",
+                      fontSize: "0.82rem",
+                      minHeight: "34px",
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {showAllWinners ? (
+                      <>
+                        <span>Sembunyikan</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}><polyline points="18 15 12 9 6 15"></polyline></svg>
+                      </>
+                    ) : (
+                      <>
+                        <span>Lihat Selengkapnya ({winners.length - 3} lagi)</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </>
+                    )}
+                  </button>
+                )}
+              </>
             )}
           </div>
 
@@ -2700,11 +2842,11 @@ export default function Home() {
                             id={`backfill-winner-${p}`}
                             value={backfillWinners.find((w) => w.periodeKe === p)?.anggotaId ?? ""}
                             onChange={(e) => {
-                              setBackfillWinners((prev) => {
-                                const updated = prev.filter((w) => w.periodeKe !== p);
-                                if (e.target.value) updated.push({ periodeKe: p, anggotaId: e.target.value });
-                                return updated;
-                              });
+                              setBackfillWinners((prev) =>
+                                prev.map((w) =>
+                                  w.periodeKe === p ? { ...w, anggotaId: e.target.value } : w
+                                )
+                              );
                             }}
                             className="custom-select"
                             style={{

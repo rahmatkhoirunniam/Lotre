@@ -11,6 +11,7 @@ export default function RegisterWizardPage() {
   const [namaLengkap, setNamaLengkap] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   
   // Step 2: Tenant Workspace details
   const [namaGrup, setNamaGrup] = useState("");
@@ -259,14 +260,38 @@ export default function RegisterWizardPage() {
               <label style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "500" }}>
                 Kata Sandi (min 6 karakter)
               </label>
-              <input
-                type="password"
-                placeholder="Sandi Rahasia"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                style={inputStyle}
-              />
+              <div style={{ position: "relative", width: "100%" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Sandi Rahasia"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  style={{ ...inputStyle, width: "100%", paddingRight: "44px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "10px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontSize: "1rem",
+                    padding: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  title={showPassword ? "Sembunyikan Kata Sandi" : "Tampilkan Kata Sandi"}
+                >
+                  {showPassword ? "👁️" : "🙈"}
+                </button>
+              </div>
             </div>
 
             <button

@@ -8,6 +8,7 @@ import Link from "next/link";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -118,23 +119,48 @@ export default function LoginPage() {
               Kata Sandi
             </label>
           </div>
-          <input
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{
-              padding: "12px 16px",
-              borderRadius: "10px",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              background: "rgba(0, 0, 0, 0.25)",
-              color: "#fff",
-              fontSize: "0.9rem",
-              transition: "border-color 0.2s",
-              outline: "none",
-            }}
-          />
+          <div style={{ position: "relative", width: "100%" }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{
+                padding: "12px 48px 12px 16px",
+                borderRadius: "10px",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: "rgba(0, 0, 0, 0.25)",
+                color: "#fff",
+                fontSize: "0.9rem",
+                transition: "border-color 0.2s",
+                outline: "none",
+                width: "100%",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+                fontSize: "1.05rem",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              title={showPassword ? "Sembunyikan Kata Sandi" : "Tampilkan Kata Sandi"}
+            >
+              {showPassword ? "👁️" : "🙈"}
+            </button>
+          </div>
         </div>
 
         <button
