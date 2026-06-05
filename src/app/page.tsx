@@ -72,7 +72,20 @@ export default function Home() {
   const [newMemberWhatsapp, setNewMemberWhatsapp] = useState<string>("");
 
   // Member Search state
-  const [memberSearch, setMemberSearch] = useState<string>("");
+  const [memberSearch, setMemberSearch] = useState<string>( "");
+
+  // Edit Member states
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [editMemberName, setEditMemberName] = useState<string>("");
+  const [editMemberWhatsapp, setEditMemberWhatsapp] = useState<string>("");
+  const [isSavingEditMember, setIsSavingEditMember] = useState<boolean>(false);
+  const [activeMenuMemberId, setActiveMenuMemberId] = useState<string | null>(null);
+
+  // Filter & Pagination states
+  const [statusFilter, setStatusFilter] = useState<"all" | "lunas" | "belum_bayar">("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   // Settings Form states
   const [inputNominal, setInputNominal] = useState<string>("200000");
@@ -114,6 +127,17 @@ export default function Home() {
         setActiveWorkspace(saved);
       }
     }
+  }, []);
+
+  // Close actions dropdown menu when clicking anywhere else
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveMenuMemberId(null);
+    };
+    window.addEventListener("click", handleGlobalClick);
+    return () => {
+      window.removeEventListener("click", handleGlobalClick);
+    };
   }, []);
 
   // Save active workspace to localStorage whenever it changes
@@ -249,21 +273,43 @@ export default function Home() {
     setWinnerFound(null);
     setShowConfetti(false);
     setMemberSearch(""); // Reset search when workspace changes
+    setStatusFilter("all"); // Reset status filter when workspace changes
+    setSelectedMemberIds([]); // Reset bulk selections when workspace changes
   }, [members]);
 
   // ── Client-side filtered member list (instant, zero API calls) ──────────────
   const filteredMembers = useMemo(() => {
+    let result = members;
+
+    // 1. Filter by iuran status
+    if (statusFilter === "lunas") {
+      result = result.filter((m) => m.status === "lunas");
+    } else if (statusFilter === "belum_bayar") {
+      result = result.filter((m) => m.status === "belum-bayar");
+    }
+
+    // 2. Filter by search query
     const q = memberSearch.trim().toLowerCase();
-    if (!q) return members;
-    return members.filter((m) =>
-      m.name.toLowerCase().includes(q) ||
-      m.whatsapp.includes(q) ||
-      (q === "lunas" && m.status === "lunas") ||
-      (q === "belum" && m.status === "belum-bayar") ||
-      (q === "menang" && m.hasWon) ||
-      (q === "belum menang" && !m.hasWon)
-    );
-  }, [members, memberSearch]);
+    if (q) {
+      result = result.filter((m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.whatsapp.includes(q)
+      );
+    }
+
+    return result;
+  }, [members, statusFilter, memberSearch]);
+
+  // ── Paginated member list ──────────────────────────────────────────────────
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredMembers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredMembers, currentPage, itemsPerPage]);
+
+  // Reset page when filters or limits change to avoid showing empty pages
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [memberSearch, statusFilter, itemsPerPage]);
 
   // Cancel a winner in the database
   const handleCancelWinner = async (period: number, name: string) => {
@@ -349,17 +395,142 @@ export default function Home() {
         })
       });
 
+      const data = await res.json() as { error?: string };
       if (res.ok) {
         setNewMemberName("");
         setNewMemberWhatsapp("");
         await fetchData();
       } else {
-        alert("Gagal menyimpan anggota baru.");
+        alert(data.error || "Gagal menyimpan anggota baru.");
       }
     } catch (err) {
       console.error("Add member error:", err);
     } finally {
       setIsAddingMember(false);
+    }
+  };
+
+  // Handle editing an existing member in the database
+  const handleEditMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMember || !editMemberName.trim() || !editMemberWhatsapp.trim() || isSavingEditMember) return;
+
+    setIsSavingEditMember(true);
+    try {
+      const res = await fetch("/api/members", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingMember.id,
+          name: editMemberName,
+          whatsapp: editMemberWhatsapp,
+          tenantSlug: activeWorkspace
+        })
+      });
+
+      const data = await res.json() as { error?: string };
+      if (res.ok) {
+        setEditingMember(null);
+        setEditMemberName("");
+        setEditMemberWhatsapp("");
+        await fetchData();
+      } else {
+        alert(data.error || "Gagal memperbarui data anggota.");
+      }
+    } catch (err) {
+      console.error("handleEditMember error:", err);
+      alert("Terjadi kesalahan sistem saat memperbarui data anggota.");
+    } finally {
+      setIsSavingEditMember(false);
+    }
+  };
+
+  // Handle deleting a member
+  const handleDeleteMember = async (id: string, name: string) => {
+    const confirmed = window.confirm(
+      `Apakah Anda yakin ingin menghapus anggota "${name}" secara permanen?\n\n` +
+      `Semua data riwayat pembayaran dan kemenangan anggota ini akan ikut terhapus secara permanen!`
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/members?id=${id}&tenantSlug=${activeWorkspace}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json() as { error?: string };
+      if (res.ok) {
+        await fetchData();
+      } else {
+        alert(data.error || "Gagal menghapus data anggota.");
+      }
+    } catch (err) {
+      console.error("handleDeleteMember error:", err);
+      alert("Terjadi kesalahan sistem saat menghapus data anggota.");
+    }
+  };
+
+  // Toggle single selection
+  const handleToggleSelectMember = (id: string) => {
+    setSelectedMemberIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  // Toggle Select All for paginated members on the current page
+  const handleSelectAll = () => {
+    const pageIds = paginatedMembers.map((m) => m.id);
+    const allSelectedOnPage = pageIds.every((id) => selectedMemberIds.includes(id));
+
+    if (allSelectedOnPage) {
+      setSelectedMemberIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+    } else {
+      setSelectedMemberIds((prev) => {
+        const next = [...prev];
+        pageIds.forEach((id) => {
+          if (!next.includes(id)) next.push(id);
+        });
+        return next;
+      });
+    }
+  };
+
+  // Handle bulk update of payment status
+  const handleBulkPaymentStatus = async (status: "LUNAS" | "BELUM_BAYAR") => {
+    if (selectedMemberIds.length === 0 || isDrawing) return;
+
+    const confirmMsg =
+      status === "LUNAS"
+        ? `Apakah Anda yakin ingin menandai LUNAS iuran untuk ${selectedMemberIds.length} anggota terpilih?`
+        : `Apakah Anda yakin ingin membatalkan status Lunas iuran untuk ${selectedMemberIds.length} anggota terpilih?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/payments", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          anggotaIds: selectedMemberIds,
+          periodeKe: currentPeriod,
+          status,
+          tenantSlug: activeWorkspace,
+        }),
+      });
+
+      if (res.ok) {
+        setSelectedMemberIds([]);
+        await fetchData();
+      } else {
+        const data = await res.json() as { error?: string };
+        alert(data.error || "Gagal memperbarui status iuran anggota terpilih.");
+      }
+    } catch (err) {
+      console.error("handleBulkPaymentStatus error:", err);
+      alert("Terjadi kesalahan sistem saat memperbarui status iuran.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1718,10 +1889,70 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {/* ── Settings Panel: Pengaturan Iuran & Kelompok ── */}
+          <div className="glass-card">
+            <h3 style={{ fontSize: "1.1rem", fontWeight: "600", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ display: "inline-block", width: "8px", height: "8px", background: "var(--primary)", borderRadius: "50%" }} />
+              Pengaturan Kas & Iuran
+            </h3>
+
+            <form onSubmit={handleUpdateSettings} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "500" }}>
+                  Nominal Iuran per Putaran
+                </label>
+                <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                  <span style={{ position: "absolute", left: "14px", fontSize: "0.85rem", color: "var(--text-secondary)" }}>Rp</span>
+                  <input
+                    type="number"
+                    placeholder="200000"
+                    value={inputNominal}
+                    onChange={(e) => setInputNominal(e.target.value)}
+                    required
+                    style={{
+                      padding: "10px 14px 10px 38px",
+                      borderRadius: "8px",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      background: "rgba(0, 0, 0, 0.25)",
+                      color: "#fff",
+                      fontSize: "0.85rem",
+                      outline: "none",
+                      width: "100%"
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: "0.75rem", color: "#34d399", marginTop: "2px" }}>
+                  Preview: <strong>Rp {(Number(inputNominal) || 0).toLocaleString("id-ID")}</strong>
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingSettings}
+                className="btn btn-primary"
+                style={{
+                  width: "100%",
+                  fontSize: "0.85rem",
+                  minHeight: "38px",
+                  borderRadius: "8px",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center"
+                }}
+              >
+                {isSavingSettings ? "Menyimpan Pengaturan..." : "Simpan Pengaturan"}
+              </button>
+
+              <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: "1.4", margin: 0 }}>
+                💡 Pembaruan nominal iuran akan otomatis menyesuaikan nilai iuran anggota yang belum membayar pada putaran berjalan agar kalkulasi target kas tetap sinkron.
+              </p>
+            </form>
+          </div>
         </div>
 
         {/* Right Column: Member list & Contribution grid */}
-        <div className="glass-card" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <div className="glass-card" style={{ display: "flex", flexDirection: "column", height: "100%", position: "relative", zIndex: 5 }}>
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -1804,12 +2035,11 @@ export default function Home() {
             </button>
           </form>
 
-          {/* ── Search Bar Anggota ──────────────────────────────────────────────── */}
           <div style={{
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            padding: "12px 0 8px",
+            padding: "12px 0 4px",
             flexWrap: "wrap",
           }}>
             <div style={{ position: "relative", flex: 1, minWidth: "200px" }}>
@@ -1851,133 +2081,402 @@ export default function Home() {
                 >✕</button>
               )}
             </div>
-            <div style={{ fontSize: "0.78rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-              {memberSearch
-                ? <><span style={{ color: "#fff", fontWeight: "600" }}>{filteredMembers.length}</span> dari {members.length} anggota</>
-                : <><span style={{ color: "#fff", fontWeight: "600" }}>{members.length}</span> anggota</>}
+
+            <select
+              className="custom-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              style={{
+                minWidth: "140px",
+                minHeight: "40px",
+                height: "40px",
+                paddingTop: "0",
+                paddingBottom: "0",
+              }}
+            >
+              <option value="all" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>Semua Status</option>
+              <option value="lunas" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>Sudah Lunas</option>
+              <option value="belum_bayar" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>Belum Lunas</option>
+            </select>
+          </div>
+
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontSize: "0.78rem",
+            color: "var(--text-secondary)",
+            padding: "2px 4px 10px",
+            flexWrap: "wrap",
+            gap: "8px"
+          }}>
+            <div>
+              {memberSearch || statusFilter !== "all" ? (
+                <>
+                  Menemukan <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>{filteredMembers.length}</span> dari <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>{members.length}</span> anggota berdasarkan filter
+                </>
+              ) : (
+                <>
+                  Total anggota: <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>{members.length}</span> orang
+                </>
+              )}
+            </div>
+
+            {/* Select All shortcut for Mobile viewports */}
+            <div className="mobile-only">
+              <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontWeight: "600", color: "var(--primary)" }}>
+                <input
+                  type="checkbox"
+                  checked={paginatedMembers.length > 0 && paginatedMembers.every((m) => selectedMemberIds.includes(m.id))}
+                  onChange={handleSelectAll}
+                  style={{ cursor: "pointer", width: "15px", height: "15px", verticalAlign: "middle" }}
+                />
+                Pilih Semua
+              </label>
             </div>
           </div>
 
-          <div className="table-responsive" style={{ overflowX: "auto", width: "100%" }}>
-            <table className="custom-table">
+          {selectedMemberIds.length > 0 && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              background: "rgba(139, 92, 246, 0.12)",
+              border: "1px solid rgba(139, 92, 246, 0.25)",
+              padding: "8px 14px",
+              borderRadius: "10px",
+              margin: "0 0 10px",
+              gap: "10px",
+              flexWrap: "wrap"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem" }}>
+                <span style={{ color: "#a78bfa", fontWeight: "700" }}>⚡ Tindakan Massal:</span>
+                <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>{selectedMemberIds.length} terpilih</span>
+              </div>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                <button
+                  onClick={() => handleBulkPaymentStatus("LUNAS")}
+                  className="btn btn-success"
+                  style={{
+                    minHeight: "32px",
+                    padding: "4px 12px",
+                    fontSize: "0.78rem",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    cursor: "pointer"
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Tandai Lunas
+                </button>
+                <button
+                  onClick={() => handleBulkPaymentStatus("BELUM_BAYAR")}
+                  className="btn btn-secondary"
+                  style={{
+                    minHeight: "32px",
+                    padding: "4px 12px",
+                    fontSize: "0.78rem",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    cursor: "pointer"
+                  }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                  Batalkan Lunas
+                </button>
+                <button
+                  onClick={() => setSelectedMemberIds([])}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                    fontSize: "0.8rem",
+                    padding: "4px 8px"
+                  }}
+                >
+                  Batal
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="table-responsive" style={{ overflow: "visible", width: "100%" }}>
+            <table className="custom-table member-table">
               <thead>
                 <tr>
+                  <th style={{ width: "40px", textAlign: "center" }}>
+                    <input
+                      type="checkbox"
+                      checked={paginatedMembers.length > 0 && paginatedMembers.every((m) => selectedMemberIds.includes(m.id))}
+                      onChange={handleSelectAll}
+                      style={{ cursor: "pointer", width: "16px", height: "16px", verticalAlign: "middle" }}
+                      title="Pilih Semua di Halaman Ini"
+                    />
+                  </th>
                   <th>Nama Anggota</th>
-                  <th>Kontak</th>
+                  <th className="desktop-only">Kontak</th>
                   <th>Status Iuran</th>
-                  <th>Status Undian</th>
+                  <th className="desktop-only">Status Undian</th>
                   <th style={{ textAlign: "center" }}>Tindakan</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMembers.length === 0 && members.length > 0 ? (
                   <tr>
-                    <td colSpan={5} style={{ textAlign: "center", padding: "28px 16px", color: "var(--text-secondary)" }}>
+                    <td colSpan={6} style={{ textAlign: "center", padding: "28px 16px", color: "var(--text-secondary)" }}>
                       <div style={{ fontSize: "1.5rem", marginBottom: "6px" }}>🔍</div>
                       <div style={{ fontWeight: "600", color: "#fff", marginBottom: "4px" }}>Tidak ada anggota yang cocok</div>
                       <button onClick={() => setMemberSearch("")} style={{ color: "var(--primary)", background: "none", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "0.82rem" }}>Hapus pencarian</button>
                     </td>
                   </tr>
-                ) : filteredMembers.map((member) => (
-                  <tr key={member.id}>
-                    <td data-label="Nama">
-                      <div style={{ fontWeight: "600", fontSize: "0.95rem" }}>{member.name}</div>
+                ) : paginatedMembers.map((member) => (
+                  <tr key={member.id} className={selectedMemberIds.includes(member.id) ? "row-selected" : ""}>
+                    <td style={{ textAlign: "center", width: "40px" }} className="td-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedMemberIds.includes(member.id)}
+                        onChange={() => handleToggleSelectMember(member.id)}
+                        style={{ cursor: "pointer", width: "16px", height: "16px", verticalAlign: "middle" }}
+                      />
                     </td>
-                    <td data-label="Kontak">
+                    <td data-label="Nama" className="td-name">
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <span className="member-name" style={{ fontWeight: "600", fontSize: "0.95rem" }}>{member.name}</span>
+                        {member.hasWon && (
+                          <span className="won-badge" style={{ fontSize: "1rem" }} title="Sudah Menang">👑</span>
+                        )}
+                      </div>
+                      <div className="mobile-contact" style={{ display: "none" }}>
+                        {member.whatsapp}
+                      </div>
+                    </td>
+                    <td data-label="Kontak" className="desktop-only">
                       <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{member.whatsapp}</span>
                     </td>
-                    <td data-label="Iuran">
+                    <td data-label="Iuran" className="td-iuran">
                       <span className={`badge ${member.status === "lunas" ? "badge-success" : "badge-warning"}`}>
                         {member.status === "lunas" ? "Lunas" : "Belum Bayar"}
                       </span>
                     </td>
-                    <td data-label="Undian">
+                    <td data-label="Undian" className="desktop-only">
                       <span className={`badge ${member.hasWon ? "badge-primary" : "badge-secondary"}`}>
                         {member.hasWon ? "Sudah Menang" : "Belum Menang"}
                       </span>
                     </td>
-                    <td data-label="" className="td-actions">
-                      <button
-                        onClick={() => handleTogglePayment(member.id)}
-                        className="btn btn-secondary"
-                        disabled={isDrawing}
-                        style={{
-                          minHeight: "40px",
-                          padding: "6px 12px",
-                          fontSize: "0.85rem",
-                          borderRadius: "8px",
-                          borderColor: member.status === "lunas" ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)",
-                          color: member.status === "lunas" ? "#fca5a5" : "#6ee7b7",
-                        }}
-                      >
-                        {member.status === "lunas" ? "Batalkan Lunas" : "Tandai Lunas"}
-                      </button>
+                    <td data-label="Tindakan" className="td-actions" style={{ position: "relative" }}>
+                      <div style={{ display: "flex", justifyContent: "center" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveMenuMemberId(activeMenuMemberId === member.id ? null : member.id);
+                          }}
+                          className={`btn-icon ${activeMenuMemberId === member.id ? "active" : ""}`}
+                          disabled={isDrawing}
+                          title="Pilihan Tindakan"
+                          style={{
+                            width: "36px",
+                            height: "36px",
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+                        </button>
+                        
+                        {activeMenuMemberId === member.id && (
+                          <div 
+                            className="actions-dropdown-menu"
+                            style={{
+                              position: "absolute",
+                              right: "12px",
+                              top: "46px",
+                              background: "rgba(15, 15, 20, 0.95)",
+                              backdropFilter: "blur(12px)",
+                              border: "1px solid rgba(255, 255, 255, 0.08)",
+                              borderRadius: "10px",
+                              padding: "6px",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "4px",
+                              zIndex: 100,
+                              minWidth: "160px",
+                              boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                              textAlign: "left"
+                            }}
+                          >
+                            <button
+                              onClick={() => {
+                                setActiveMenuMemberId(null);
+                                handleTogglePayment(member.id);
+                              }}
+                              className="dropdown-item"
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "10px 14px",
+                                background: "none",
+                                border: "none",
+                                borderRadius: "6px",
+                                color: "var(--text-primary)",
+                                fontSize: "0.85rem",
+                                cursor: "pointer",
+                                transition: "background 0.2s"
+                              }}
+                            >
+                              {member.status === "lunas" ? (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flexShrink: 0 }}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><polyline points="3 3 3 8 8 8"></polyline></svg>
+                                  <div style={{ flex: 1, textAlign: "left" }}>Batalkan Lunas</div>
+                                </>
+                              ) : (
+                                <>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flexShrink: 0 }}><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                  <div style={{ flex: 1, textAlign: "left" }}>Tandai Lunas</div>
+                                </>
+                              )}
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                setActiveMenuMemberId(null);
+                                setEditingMember(member);
+                                setEditMemberName(member.name);
+                                setEditMemberWhatsapp(member.whatsapp);
+                              }}
+                              className="dropdown-item"
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "10px 14px",
+                                background: "none",
+                                border: "none",
+                                borderRadius: "6px",
+                                color: "var(--text-primary)",
+                                fontSize: "0.85rem",
+                                cursor: "pointer",
+                                transition: "background 0.2s"
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flexShrink: 0 }}><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                              <div style={{ flex: 1, textAlign: "left" }}>Ubah Data</div>
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                setActiveMenuMemberId(null);
+                                handleDeleteMember(member.id, member.name);
+                              }}
+                              className="dropdown-item"
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "10px",
+                                width: "100%",
+                                padding: "10px 14px",
+                                background: "none",
+                                border: "none",
+                                borderRadius: "6px",
+                                color: "var(--text-primary)",
+                                fontSize: "0.85rem",
+                                cursor: "pointer",
+                                transition: "background 0.2s"
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--error)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", flexShrink: 0 }}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                              <div style={{ flex: 1, textAlign: "left" }}>Hapus Anggota</div>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
 
-        {/* ── Settings Panel: Pengaturan Iuran & Kelompok ── */}
-        <div className="glass-card" style={{ marginTop: "24px" }}>
-          <h3 style={{ fontSize: "1.1rem", fontWeight: "600", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ display: "inline-block", width: "8px", height: "8px", background: "var(--primary)", borderRadius: "50%" }} />
-            Pengaturan Kas & Iuran
-          </h3>
-
-          <form onSubmit={handleUpdateSettings} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: "500" }}>
-                Nominal Iuran per Putaran
-              </label>
-              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-                <span style={{ position: "absolute", left: "14px", fontSize: "0.85rem", color: "var(--text-secondary)" }}>Rp</span>
-                <input
-                  type="number"
-                  placeholder="200000"
-                  value={inputNominal}
-                  onChange={(e) => setInputNominal(e.target.value)}
-                  required
-                  style={{
-                    padding: "10px 14px 10px 38px",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
-                    background: "rgba(0, 0, 0, 0.25)",
-                    color: "#fff",
-                    fontSize: "0.85rem",
-                    outline: "none",
-                    width: "100%"
-                  }}
-                />
-              </div>
-              <span style={{ fontSize: "0.75rem", color: "#34d399", marginTop: "2px" }}>
-                Preview: <strong>Rp {(Number(inputNominal) || 0).toLocaleString("id-ID")}</strong>
-              </span>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSavingSettings}
-              className="btn btn-primary"
-              style={{
-                width: "100%",
-                fontSize: "0.85rem",
-                minHeight: "38px",
-                borderRadius: "8px",
+            {/* ── Pagination Controls ────────────────────────────────────────────── */}
+            {filteredMembers.length > 0 && (
+              <div style={{
                 display: "flex",
-                justifyContent: "center",
-                alignItems: "center"
-              }}
-            >
-              {isSavingSettings ? "Menyimpan Pengaturan..." : "Simpan Pengaturan"}
-            </button>
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "16px 12px 8px",
+                marginTop: "8px",
+                borderTop: "1px solid rgba(255, 255, 255, 0.04)",
+                flexWrap: "wrap",
+                gap: "12px",
+                fontSize: "0.82rem",
+                color: "var(--text-secondary)"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>Tampilkan:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      background: "rgba(0, 0, 0, 0.25)",
+                      color: "#fff",
+                      outline: "none",
+                      fontSize: "0.8rem",
+                      cursor: "pointer"
+                    }}
+                  >
+                    <option value="5" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>5</option>
+                    <option value="10" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>10</option>
+                    <option value="20" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>20</option>
+                    <option value="50" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>50</option>
+                    <option value="100" style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>100</option>
+                  </select>
+                  <span>entri</span>
+                </div>
 
-            <p style={{ fontSize: "0.72rem", color: "var(--text-secondary)", lineHeight: "1.4", margin: 0 }}>
-              💡 Pembaruan nominal iuran akan otomatis menyesuaikan nilai iuran anggota yang belum membayar pada putaran berjalan agar kalkulasi target kas tetap sinkron.
-            </p>
-          </form>
+                <div>
+                  Halaman {currentPage} dari {Math.ceil(filteredMembers.length / itemsPerPage) || 1} ({filteredMembers.length} anggota)
+                </div>
+
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="btn btn-secondary"
+                    style={{
+                      minHeight: "30px",
+                      padding: "4px 10px",
+                      fontSize: "0.78rem",
+                      borderRadius: "6px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Sebelumnya
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredMembers.length / itemsPerPage), p + 1))}
+                    disabled={currentPage >= Math.ceil(filteredMembers.length / itemsPerPage)}
+                    className="btn btn-secondary"
+                    style={{
+                      minHeight: "30px",
+                      padding: "4px 10px",
+                      fontSize: "0.78rem",
+                      borderRadius: "6px",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -2758,6 +3257,142 @@ export default function Home() {
                   }}
                 >
                   Buat Sekarang
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Member Modal */}
+      {editingMember && (
+        <div className="modal-overlay" style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(0, 0, 0, 0.75)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          padding: "16px"
+        }}>
+          <div className="modal-content" style={{
+            background: "rgba(30, 27, 75, 0.85)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(139, 92, 246, 0.25)",
+            borderRadius: "20px",
+            padding: "28px",
+            maxWidth: "480px",
+            width: "100%",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--primary-glow)",
+            boxSizing: "border-box"
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span style={{ fontSize: "1.5rem" }}>✍️</span>
+                <h3 style={{ fontSize: "1.25rem", fontWeight: "700", margin: 0, color: "#fff" }}>Ubah Data Anggota</h3>
+              </div>
+              <button
+                id="btn-close-edit-member"
+                onClick={() => setEditingMember(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: "var(--text-secondary)",
+                  fontSize: "1.2rem",
+                  cursor: "pointer",
+                  padding: "4px"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleEditMember} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>
+                  Nama Anggota
+                </label>
+                <input
+                  id="edit-member-name"
+                  type="text"
+                  required
+                  value={editMemberName}
+                  onChange={(e) => setEditMemberName(e.target.value)}
+                  placeholder="Nama Anggota"
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: "rgba(0, 0, 0, 0.2)",
+                    color: "#fff",
+                    fontSize: "0.9rem",
+                    outline: "none"
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "var(--text-secondary)" }}>
+                  WhatsApp (cth: 0812...)
+                </label>
+                <input
+                  id="edit-member-whatsapp"
+                  type="text"
+                  required
+                  value={editMemberWhatsapp}
+                  onChange={(e) => setEditMemberWhatsapp(e.target.value)}
+                  placeholder="0812xxxxxxxx"
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: "rgba(0, 0, 0, 0.2)",
+                    color: "#fff",
+                    fontSize: "0.9rem",
+                    outline: "none"
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", marginTop: "12px" }}>
+                <button
+                  id="btn-cancel-edit-member"
+                  type="button"
+                  onClick={() => setEditingMember(null)}
+                  className="btn btn-secondary"
+                  style={{
+                    flex: 1,
+                    minHeight: "44px",
+                    borderRadius: "10px",
+                    fontSize: "0.9rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  Batal
+                </button>
+                <button
+                  id="btn-submit-edit-member"
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={isSavingEditMember}
+                  style={{
+                    flex: 1,
+                    minHeight: "44px",
+                    borderRadius: "10px",
+                    fontSize: "0.9rem",
+                    cursor: "pointer",
+                    background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-glow) 100%)",
+                    boxShadow: "0 2px 8px var(--primary-glow)",
+                    border: "none",
+                    color: "#fff"
+                  }}
+                >
+                  {isSavingEditMember ? "Menyimpan..." : "Simpan Perubahan"}
                 </button>
               </div>
             </form>

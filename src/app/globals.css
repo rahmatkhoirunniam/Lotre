@@ -1089,3 +1089,259 @@ body::after {
     overflow-x: auto !important;
   }
 }
+
+/* ══════════════════════════════════════════════
+   BUTTON ICON & MEMBER TABLE RESPONSIVE STYLING
+   ══════════════════════════════════════════════ */
+
+/* Button Icon Styles */
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+.btn-icon:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+.btn-icon:active:not(:disabled) {
+  transform: translateY(0);
+}
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-icon-success {
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.2);
+  background: rgba(52, 211, 153, 0.05);
+}
+.btn-icon-success:hover:not(:disabled) {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.4);
+  color: #6ee7b7;
+}
+
+.btn-icon-danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.2);
+  background: rgba(248, 113, 113, 0.05);
+}
+.btn-icon-danger:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: #fca5a5;
+}
+
+.btn-icon-primary {
+  color: #a78bfa;
+  border-color: rgba(167, 139, 250, 0.2);
+  background: rgba(167, 139, 250, 0.05);
+}
+.btn-icon-primary:hover:not(:disabled) {
+  background: rgba(167, 139, 250, 0.15);
+  border-color: rgba(167, 139, 250, 0.4);
+  color: #c084fc;
+}
+
+/* Light mode overrides for icon buttons */
+.light-mode .btn-icon {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.light-mode .btn-icon:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+.light-mode .btn-icon-success {
+  color: #059669;
+  border-color: rgba(5, 150, 105, 0.2);
+  background: rgba(5, 150, 105, 0.05);
+}
+.light-mode .btn-icon-success:hover:not(:disabled) {
+  background: rgba(5, 150, 105, 0.12);
+  border-color: rgba(5, 150, 105, 0.4);
+  color: #047857;
+}
+.light-mode .btn-icon-danger {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.2);
+  background: rgba(220, 38, 38, 0.05);
+}
+.light-mode .btn-icon-danger:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.12);
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #b91c1c;
+}
+.light-mode .btn-icon-primary {
+  color: #7c3aed;
+  border-color: rgba(124, 58, 237, 0.2);
+  background: rgba(124, 58, 237, 0.05);
+}
+.light-mode .btn-icon-primary:hover:not(:disabled) {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #6d28d9;
+}
+
+/* Mobile responsive layout overrides for member list */
+@media (max-width: 640px) {
+  /* Sembunyikan kolom khusus desktop */
+  .table-responsive .custom-table.member-table td.desktop-only,
+  .table-responsive .custom-table.member-table th.desktop-only {
+    display: none !important;
+  }
+
+  /* Tampilkan kontak WhatsApp di mobile */
+  .member-table .mobile-contact {
+    display: block !important;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin-top: 3px;
+  }
+
+  /* Baris tabel menjadi baris tunggal horizontal yang minimalis */
+  .table-responsive .custom-table.member-table tbody tr {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    margin-bottom: 8px !important;
+    border-radius: 12px !important;
+    gap: 12px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .table-responsive .custom-table.member-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+  }
+
+  /* Sel-sel tabel */
+  .table-responsive .custom-table.member-table td {
+    display: block !important;
+    padding: 0 !important;
+    border-bottom: none !important;
+    text-align: left !important;
+    min-height: unset !important;
+    width: auto !important;
+    background: transparent !important;
+  }
+
+  /* Hapus text label pseudo-element data-label */
+  .table-responsive .custom-table.member-table td::before {
+    display: none !important;
+  }
+
+  /* Kolom Nama: ambil ruang sisa */
+  .table-responsive .custom-table.member-table td.td-name {
+    flex-grow: 1 !important;
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .table-responsive .custom-table.member-table td.td-name .member-name {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  /* Kolom Iuran: di tengah */
+  .table-responsive .custom-table.member-table td.td-iuran {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Kolom Tindakan: di kanan */
+  .table-responsive .custom-table.member-table td.td-actions {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+  }
+
+  .table-responsive .custom-table.member-table td.td-actions .btn-icon {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  /* Sesuaikan ukuran badge di mobile agar lebih minimalis */
+  .table-responsive .custom-table.member-table .badge {
+    padding: 3px 8px !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.02em !important;
+  }
+}
+
+/* Dropdown Item hover & theme overrides */
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.light-mode .actions-dropdown-menu {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12) !important;
+}
+.light-mode .dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+/* Bulk selection row styles */
+.custom-table tbody tr.row-selected {
+  background: rgba(139, 92, 246, 0.09) !important;
+}
+.light-mode .custom-table tbody tr.row-selected {
+  background: rgba(139, 92, 246, 0.06) !important;
+}
+.custom-table tbody tr.row-selected:hover {
+  background: rgba(139, 92, 246, 0.13) !important;
+}
+.light-mode .custom-table tbody tr.row-selected:hover {
+  background: rgba(139, 92, 246, 0.08) !important;
+}
+
+/* Hide target label in mobile view for checkbox cell */
+@media (max-width: 640px) {
+  .table-responsive .custom-table.member-table td.td-checkbox {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+    margin-right: 4px !important;
+  }
+}
+
+/* Responsive Helper Utilities */
+.mobile-only {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .mobile-only {
+    display: block !important;
+  }
+  .desktop-only {
+    display: none !important;
+  }
+}

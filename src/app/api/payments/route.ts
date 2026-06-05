@@ -12,10 +12,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Request body tidak valid." }, { status: 400 });
     }
 
-    const { anggotaId, periodeKe, status, tenantSlug } = body as Record<string, unknown>;
+    const { anggotaId, anggotaIds, periodeKe, status, tenantSlug } = body as Record<string, unknown>;
 
-    if (!anggotaId || typeof anggotaId !== "string") {
-      return NextResponse.json({ error: "anggotaId wajib diisi." }, { status: 400 });
+    const ids = Array.isArray(anggotaIds)
+      ? (anggotaIds as string[])
+      : (anggotaId && typeof anggotaId === "string" ? [anggotaId] : []);
+
+    if (ids.length === 0) {
+      return NextResponse.json({ error: "anggotaId atau anggotaIds wajib diisi." }, { status: 400 });
     }
     if (status !== "LUNAS" && status !== "BELUM_BAYAR") {
       return NextResponse.json({ error: "Status harus 'LUNAS' atau 'BELUM_BAYAR'." }, { status: 400 });
@@ -45,23 +49,30 @@ export async function PUT(request: NextRequest) {
     const isLunas = validatedStatus === "LUNAS";
     const tanggalBayar = isLunas ? new Date() : null;
 
-    const existingPayment = await db.setoran.findFirst({
-      where: { tenantId, anggotaId, periodeKe: parsedPeriode },
-    });
-
-    const updatedPayment = existingPayment
-      ? await db.setoran.update({
-          where: { id: existingPayment.id },
-          data: { status: validatedStatus, tanggalBayar },
-        })
-      : await db.setoran.create({
-          data: { tenantId, anggotaId, periodeKe: parsedPeriode, nominal, status: validatedStatus, tanggalBayar },
+    const results = await db.$transaction(async (tx) => {
+      const updatedList = [];
+      for (const id of ids) {
+        const existingPayment = await tx.setoran.findFirst({
+          where: { tenantId, anggotaId: id, periodeKe: parsedPeriode },
         });
+
+        const updated = existingPayment
+          ? await tx.setoran.update({
+              where: { id: existingPayment.id },
+              data: { status: validatedStatus, tanggalBayar },
+            })
+          : await tx.setoran.create({
+              data: { tenantId, anggotaId: id, periodeKe: parsedPeriode, nominal, status: validatedStatus, tanggalBayar },
+            });
+        updatedList.push(updated);
+      }
+      return updatedList;
+    });
 
     // Invalidate member cache for this tenant
     apiCache.invalidate(`members:${tenantId}`);
 
-    return NextResponse.json({ payment: updatedPayment });
+    return NextResponse.json({ success: true, count: results.length });
   } catch (error) {
     console.error("PUT /api/payments error:", error);
     return NextResponse.json({ error: "Gagal memperbarui status setoran." }, { status: 500 });
