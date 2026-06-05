@@ -76,7 +76,7 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
@@ -1359,4 +1359,54 @@ body::after {
 .light-mode .sound-toggle-btn:hover {
   background: rgba(0, 0, 0, 0.08) !important;
   border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Bulk Action Toolbar - Sticky / Floating at the Top */
+.bulk-actions-toolbar {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(13, 20, 35, 0.85); /* Solid glass base in dark mode */
+  border: 1.5px solid rgba(139, 92, 246, 0.4);
+  padding: 12px 18px;
+  border-radius: 12px;
+  margin: 0 0 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(139, 92, 246, 0.1);
+  transition: all 0.3s ease;
+  animation: toolbarFadeIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes toolbarFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.light-mode .bulk-actions-toolbar {
+  background: rgba(255, 255, 255, 0.92); /* Glass base in light mode */
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.1), 0 0 15px rgba(139, 92, 246, 0.05);
+}
+
+@media (max-width: 640px) {
+  .bulk-actions-toolbar {
+    top: 12px;
+    padding: 10px 14px;
+    gap: 8px;
+    border-radius: 10px;
+    margin: 0 0 12px;
+  }
 }

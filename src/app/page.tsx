@@ -1091,7 +1091,7 @@ export default function Home() {
     );
   };
 
-  if (sessionStatus === "loading" || (sessionStatus === "authenticated" && loading && !showDemo)) {
+  if (sessionStatus === "loading" || (sessionStatus === "authenticated" && loading && members.length === 0 && !showDemo)) {
     return (
       <div style={{
         display: "flex",
@@ -2562,20 +2562,9 @@ export default function Home() {
           </div>
 
           {selectedMemberIds.length > 0 && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              background: "rgba(139, 92, 246, 0.12)",
-              border: "1px solid rgba(139, 92, 246, 0.25)",
-              padding: "8px 14px",
-              borderRadius: "10px",
-              margin: "0 0 10px",
-              gap: "10px",
-              flexWrap: "wrap"
-            }}>
+            <div className="bulk-actions-toolbar">
               <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.85rem" }}>
-                <span style={{ color: "#a78bfa", fontWeight: "700" }}>⚡ Tindakan Massal:</span>
+                <span style={{ color: "var(--primary)", fontWeight: "700" }}>⚡ Tindakan Massal:</span>
                 <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>{selectedMemberIds.length} terpilih</span>
               </div>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
